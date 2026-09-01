@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="Haven.Framework">
+    <type fullname="Haven.Framework.Core.FrameworkContext" preserve="all" />
+    <type fullname="Haven.Framework.Core.FrameworkResult" preserve="all" />
+    <type fullname="Haven.Framework.Core.FrameworkResult`1" preserve="all" />
+    <type fullname="Haven.Framework.Core.GameLog" preserve="all" />
+    <type fullname="Haven.Framework.Core.HotfixContext" preserve="all" />
+    <type fullname="Haven.Framework.Core.IEventBus" preserve="all" />
+    <type fullname="Haven.Framework.Core.IHotfixEntry" preserve="all" />
+    <type fullname="Haven.Framework.Core.IServiceRegistry" preserve="all" />
+  </assembly>
+  <assembly fullname="System">
+    <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" preserve="all" />
+    <type fullname="System.ComponentModel.EditorBrowsableAttribute" preserve="all" />
+    <type fullname="System.ComponentModel.EditorBrowsableState" preserve="all" />
+  </assembly>
+  <assembly fullname="System.Core">
+    <type fullname="System.Collections.Generic.HashSet`1" preserve="all" />
+  </assembly>
+  <assembly fullname="mscorlib">
+    <type fullname="System.Action`1" preserve="all" />
+    <type fullname="System.ArgumentNullException" preserve="all" />
+    <type fullname="System.Array" preserve="all" />
+    <type fullname="System.Byte" preserve="all" />
+    <type fullname="System.Collections.Generic.Dictionary`2" preserve="all" />
+    <type fullname="System.Collections.Generic.IEnumerator`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IReadOnlyList`1" preserve="all" />
+    <type fullname="System.Collections.Generic.List`1" preserve="all" />
+    <type fullname="System.Collections.Generic.List`1/Enumerator" preserve="all" />
+    <type fullname="System.Collections.IEnumerator" preserve="all" />
+    <type fullname="System.Comparison`1" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggableAttribute" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" preserve="all" />
+    <type fullname="System.Diagnostics.DebuggerHiddenAttribute" preserve="all" />
+    <type fullname="System.Enum" preserve="all" />
+    <type fullname="System.Exception" preserve="all" />
+    <type fullname="System.IDisposable" preserve="all" />
+    <type fullname="System.Int32" preserve="all" />
+    <type fullname="System.InvalidOperationException" preserve="all" />
+    <type fullname="System.NotSupportedException" preserve="all" />
+    <type fullname="System.Object" preserve="all" />
+    <type fullname="System.Predicate`1" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.IsReadOnlyAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.IteratorStateMachineAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.RuntimeCompatibilityAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.RuntimeHelpers" preserve="all" />
+    <type fullname="System.RuntimeFieldHandle" preserve="all" />
+    <type fullname="System.String" preserve="all" />
+    <type fullname="System.Type" preserve="all" />
+    <type fullname="System.ValueType" preserve="all" />
+  </assembly>
+</linker>

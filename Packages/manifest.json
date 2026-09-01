@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.code-philosophy.hybridclr": "https://github.com/focus-creative-games/hybridclr_unity.git#v8.14.1",
+    "com.tuyoogame.yooasset": "https://github.com/tuyoogame/YooAsset.git?path=/Assets/YooAsset#3.0.5",
     "com.unity.ai.navigation": "2.0.14",
     "com.unity.collab-proxy": "2.13.3",
     "com.unity.ide.rider": "3.0.38",

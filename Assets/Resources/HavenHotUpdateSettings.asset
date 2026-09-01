@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f08903857d1233346a8fa04f8f5e7812, type: 3}
+  m_Name: HavenHotUpdateSettings
+  m_EditorClassIdentifier: Haven.Framework::Haven.Framework.HotUpdate.HotUpdateSettings
+  playMode: 0
+  packageName: DefaultPackage
+  autoStart: 1
+  primaryHost: http://127.0.0.1:8080/CDN
+  fallbackHost: http://127.0.0.1:8080/CDN
+  appVersion: v1.0
+  appendPlatformAndVersion: 1
+  requestTimeoutSeconds: 60
+  workflowRetryCount: 2
+  downloadMaxConcurrency: 8
+  downloadFileRetryCount: 3
+  retryDelaySeconds: 1
+  hotfixEntryType: Haven.Hotfix.HotfixEntry
+  hotUpdateAssemblies:
+  - AssemblyName: Haven.Hotfix
+    Location: Haven.Hotfix.dll
+  aotMetadataLocations:
+  - mscorlib.dll
+  - System.dll
+  - System.Core.dll
+  - Haven.Framework.dll
+  useLoadedHotfixAssemblyInEditor: 1

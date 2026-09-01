@@ -834,6 +834,8 @@ PlayerSettings:
   platformArchitecture: {}
   scriptingBackend:
     Android: 1
+    Standalone: 1
+    WebGL: 1
   il2cppCompilerConfiguration: {}
   il2cppCodeGeneration: {}
   il2cppLTOMode: {}
@@ -847,8 +849,10 @@ PlayerSettings:
   scriptingRuntimeVersion: 1
   gcIncremental: 1
   gcWBarrierValidation: 0
-  apiCompatibilityLevelPerPlatform: {}
-  editorAssembliesCompatibilityLevel: 1
+  apiCompatibilityLevelPerPlatform:
+    Standalone: 3
+    WebGL: 3
+  editorAssembliesCompatibilityLevel: 2
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
   metroPackageName: My project (1)

@@ -1,0 +1,17 @@
+{
+  "name": "Haven.Framework",
+  "rootNamespace": "Haven.Framework",
+  "references": [
+    "HybridCLR.Runtime",
+    "YooAsset"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,229 @@
+using System;
+using System.Collections;
+using Haven.Framework.Core;
+using Haven.Framework.HotUpdate;
+using Haven.Framework.Resources;
+using UnityEngine;
+
+namespace Haven.Framework.Bootstrap
+{
+    public enum BootstrapState
+    {
+        Idle,
+        Starting,
+        Running,
+        Failed,
+        ShuttingDown
+    }
+
+    [DefaultExecutionOrder(-10000)]
+    [DisallowMultipleComponent]
+    public sealed class GameBootstrap : MonoBehaviour
+    {
+        private const string Module = "Bootstrap";
+        private static GameBootstrap _instance;
+
+        [SerializeField] private HotUpdateSettings settings;
+        [SerializeField] private bool persistAcrossScenes = true;
+
+        private EventBus _events;
+        private ServiceRegistry _services;
+        private FrameworkContext _context;
+        private HybridClrHotfixLoader _hotfixLoader;
+        private Coroutine _startupCoroutine;
+
+        public static GameBootstrap Instance => _instance;
+        public BootstrapState State { get; private set; } = BootstrapState.Idle;
+        public FrameworkError LastError { get; private set; }
+        public FrameworkContext Context => _context;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void EnsureBootstrapExists()
+        {
+            if (_instance)
+                return;
+            var existing = FindAnyObjectByType<GameBootstrap>();
+            if (existing)
+            {
+                _instance = existing;
+                return;
+            }
+            var root = new GameObject("[HavenFramework]");
+            root.AddComponent<GameBootstrap>();
+        }
+
+        private void Awake()
+        {
+            if (_instance && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            _instance = this;
+            if (persistAcrossScenes)
+                DontDestroyOnLoad(gameObject);
+
+            if (!settings)
+                settings = UnityEngine.Resources.Load<HotUpdateSettings>(HotUpdateSettings.DefaultResourceName);
+            if (!settings)
+            {
+                settings = HotUpdateSettings.CreateRuntimeDefault();
+                GameLog.Warning(Module, "HavenHotUpdateSettings asset not found; using editor-direct runtime defaults.", "BOOT_DEFAULT_SETTINGS");
+            }
+
+            if (settings.AutoStart)
+                StartFramework();
+        }
+
+        public void StartFramework()
+        {
+            if (State == BootstrapState.Starting || State == BootstrapState.Running)
+                return;
+            if (_startupCoroutine != null)
+                StopCoroutine(_startupCoroutine);
+            _startupCoroutine = StartCoroutine(StartupFlow());
+        }
+
+        public void Retry()
+        {
+            if (State != BootstrapState.Failed)
+                return;
+            ShutdownRuntime();
+            State = BootstrapState.Idle;
+            LastError = null;
+            StartFramework();
+        }
+
+        private IEnumerator StartupFlow()
+        {
+            State = BootstrapState.Starting;
+            LastError = null;
+
+            _events = new EventBus();
+            _services = new ServiceRegistry();
+            _context = new FrameworkContext(gameObject, settings, _services, _events);
+            var resources = new YooAssetResourceService();
+            _context.Resources = resources;
+            _services.Register<IEventBus>(_events);
+            _services.Register<IServiceRegistry>(_services);
+            _services.Register<IResourceService>(resources);
+
+            Report(new HotUpdateProgress(HotUpdateStage.InitializeFramework, 1f, "Core services initialized."));
+
+            var updateService = new YooAssetUpdateService(_context, resources, Report);
+            Exception updateException = null;
+            yield return SafeCoroutine.Run(updateService.Run(), exception => updateException = exception);
+            if (updateException != null)
+            {
+                Fail(new FrameworkError(
+                    "BOOT_UPDATE_EXCEPTION",
+                    "The content update workflow threw an unhandled exception.",
+                    Module,
+                    true,
+                    updateException));
+                yield break;
+            }
+            if (!updateService.Result.Succeeded)
+            {
+                Fail(updateService.Result.Error);
+                yield break;
+            }
+
+            _hotfixLoader = new HybridClrHotfixLoader(_context, Report);
+            Exception hotfixException = null;
+            yield return SafeCoroutine.Run(_hotfixLoader.Run(), exception => hotfixException = exception);
+            if (hotfixException != null)
+            {
+                Fail(new FrameworkError(
+                    "BOOT_HOTFIX_EXCEPTION",
+                    "The hotfix startup workflow threw an unhandled exception.",
+                    Module,
+                    false,
+                    hotfixException));
+                yield break;
+            }
+            if (!_hotfixLoader.Result.Succeeded)
+            {
+                Fail(_hotfixLoader.Result.Error);
+                yield break;
+            }
+
+            State = BootstrapState.Running;
+            _startupCoroutine = null;
+            var completed = new HotUpdateCompleted(_context.ContentVersion);
+            _events.Publish(completed);
+            Report(new HotUpdateProgress(HotUpdateStage.Completed, 1f, "Framework and hotfix runtime are ready."));
+            GameLog.Info(Module, $"Framework started. contentVersion={_context.ContentVersion}", "BOOT_COMPLETED", _context.CorrelationId);
+        }
+
+        private void Update()
+        {
+            if (State == BootstrapState.Running)
+                _hotfixLoader?.Tick(Time.deltaTime);
+        }
+
+        private void FixedUpdate()
+        {
+            if (State == BootstrapState.Running)
+                _hotfixLoader?.FixedTick(Time.fixedDeltaTime);
+        }
+
+        private void LateUpdate()
+        {
+            if (State == BootstrapState.Running)
+                _hotfixLoader?.LateTick(Time.deltaTime);
+        }
+
+        private void OnApplicationQuit()
+        {
+            ShutdownRuntime();
+        }
+
+        private void OnDestroy()
+        {
+            if (_instance != this)
+                return;
+            ShutdownRuntime();
+            _instance = null;
+        }
+
+        private void Fail(FrameworkError error)
+        {
+            _hotfixLoader?.Shutdown();
+            LastError = error ?? new FrameworkError("BOOT_UNKNOWN", "Unknown startup error.", Module);
+            State = BootstrapState.Failed;
+            _startupCoroutine = null;
+            _events?.Publish(new HotUpdateFailed(LastError));
+            Report(new HotUpdateProgress(HotUpdateStage.Failed, 0f, LastError.ToString()));
+            GameLog.Error(Module, LastError.Message, LastError.Code, LastError.Exception, _context?.CorrelationId);
+        }
+
+        private void Report(HotUpdateProgress progress)
+        {
+            _events?.Publish(progress);
+            if (progress.Stage != HotUpdateStage.DownloadFiles || progress.NormalizedProgress >= 1f)
+                GameLog.Info(Module, progress.Message, progress.Stage.ToString(), _context?.CorrelationId);
+        }
+
+        private void ShutdownRuntime()
+        {
+            if (State == BootstrapState.ShuttingDown)
+                return;
+            State = BootstrapState.ShuttingDown;
+            _hotfixLoader?.Shutdown();
+            _hotfixLoader = null;
+            _services?.Clear();
+            _events?.Clear();
+            _context = null;
+            _services = null;
+            _events = null;
+            if (_startupCoroutine != null)
+            {
+                StopCoroutine(_startupCoroutine);
+                _startupCoroutine = null;
+            }
+            State = BootstrapState.Idle;
+        }
+    }
+}
