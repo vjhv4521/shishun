@@ -148,7 +148,7 @@
     },
     "com.unity.render-pipelines.universal": {
       "version": "17.5.0",
-      "depth": 1,
+      "depth": 0,
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.5.0",
@@ -158,7 +158,7 @@
     },
     "com.unity.render-pipelines.universal-config": {
       "version": "17.5.0",
-      "depth": 0,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.render-pipelines.core": "17.5.0"
