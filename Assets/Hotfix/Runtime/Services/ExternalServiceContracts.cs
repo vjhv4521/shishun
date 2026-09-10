@@ -1,27 +1,19 @@
 using System;
 using System.Collections;
 using Haven.Framework.Core;
+using Haven.Framework.Services;
 
 namespace Haven.Hotfix.Services
 {
-    public interface INetworkService
-    {
-        bool IsConnected { get; }
-        IEnumerator Connect(string endpoint, Action<FrameworkResult> completed);
-        void Disconnect();
-    }
-
-    public interface ILLMService
-    {
-        IEnumerator Request(string requestJson, Action<FrameworkResult<string>> completed);
-    }
-
     public sealed class OfflineNetworkService : INetworkService
     {
+        public NetworkState State { get; private set; } = NetworkState.Disconnected;
         public bool IsConnected { get; private set; }
+        public int ConnectedPeerCount => IsConnected ? 1 : 0;
 
-        public IEnumerator Connect(string endpoint, Action<FrameworkResult> completed)
+        public IEnumerator Connect(NetworkEndpoint endpoint, Action<FrameworkResult> completed)
         {
+            State = NetworkState.Connected;
             IsConnected = true;
             completed?.Invoke(FrameworkResult.Success());
             yield break;
@@ -29,17 +21,25 @@ namespace Haven.Hotfix.Services
 
         public void Disconnect()
         {
+            State = NetworkState.Disconnected;
             IsConnected = false;
         }
     }
 
     public sealed class LocalFallbackLlmService : ILLMService
     {
-        private const string FallbackJson = "{\"dialogue\":\"通信暂不可用，请先收集基础物资。\",\"questType\":\"Collect\",\"targetId\":\"Wood\",\"count\":3,\"rewardId\":\"Food\"}";
-
-        public IEnumerator Request(string requestJson, Action<FrameworkResult<string>> completed)
+        public IEnumerator RequestQuest(AiQuestRequest request, Action<FrameworkResult<AiQuestResponse>> completed)
         {
-            completed?.Invoke(FrameworkResult<string>.Success(FallbackJson));
+            completed?.Invoke(FrameworkResult<AiQuestResponse>.Success(new AiQuestResponse
+            {
+                RequestId = Guid.NewGuid().ToString("N"),
+                Dialogue = "通信暂不可用，请先收集基础物资。",
+                QuestType = "Collect",
+                TargetId = "Wood",
+                Count = 3,
+                RewardId = "Food",
+                Source = AiQuestSource.LocalFallback
+            }));
             yield break;
         }
     }

@@ -9,6 +9,8 @@
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
+**/[Bb]in/
+**/[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/
@@ -17,6 +19,10 @@
 # HybridCLR/WebGL stripped-player staging output.
 /Data/
 *.log
+
+# Microsoft Office lock files and Unity test/build scratch assets
+~$*.docx
+/[Aa]ssets/[Rr]esources/PerformanceTestRun*.json*
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be commited to version control.
 *.blend1
@@ -89,6 +95,7 @@ InitTestScene*.unity*
 # Addressables default ignores, before user customizations
 /ServerData
 /[Aa]ssets/StreamingAssets/aa*
+/[Aa]ssets/StreamingAssets/yoo/
 /[Aa]ssets/AddressableAssetsData/link.xml*
 /[Aa]ssets/Addressables_Temp*
 # By default, Addressables content builds will generate addressables_content_state.bin

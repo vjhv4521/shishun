@@ -15,9 +15,9 @@ MonoBehaviour:
   playMode: 0
   packageName: DefaultPackage
   autoStart: 1
-  primaryHost: http://127.0.0.1:8080/CDN
-  fallbackHost: http://127.0.0.1:8080/CDN
-  appVersion: v1.0
+  primaryHost: http://127.0.0.1:5080/patches
+  fallbackHost: http://127.0.0.1:5080/patches
+  appVersion: 0.1.0
   appendPlatformAndVersion: 1
   requestTimeoutSeconds: 60
   workflowRetryCount: 2

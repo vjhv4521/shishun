@@ -43,12 +43,14 @@ Unity 完成包导入后，先在 Unity Hub 安装实际发布平台的 **Build 
 1. `Haven/Framework/1. Setup Project`：创建运行时配置、设置 IL2CPP、注册 `Haven.Hotfix`、配置 YooAsset 收集器。
 2. `Haven/Framework/2. Install HybridCLR Runtime`：安装与 Unity 6000.5 对应的本地 `il2cpp_plus`。
 3. `Haven/Framework/3. Generate All and Prepare DLL Assets`：生成热更 DLL、桥接、link.xml、AOT 元数据，并复制为 YooAsset 原生文件。
-4. 在 `YooAsset/AssetBundle Builder` 中构建 `DefaultPackage`，把输出部署到配置的远端目录。
-5. 将 `Assets/Resources/HavenHotUpdateSettings.asset` 从 `EditorDirect` 改为 `Host`，设置主/备用资源地址与应用版本。
+4. `Haven/Content/1. Build Current Assets and Publish Locally`：构建 `DefaultPackage` 并发布到 ASP.NET 网关的静态目录。
+5. `Haven/Build/Windows Client (HybridCLR)`：自动执行 Generate All、制作首包资源、临时切换为 `Host` 模式并构建客户端。
+
+Windows Dedicated Server 使用 `Haven/Build/Windows Dedicated Server` 单独构建。工具会临时关闭 HybridCLR，服务端不加载热更 DLL；服务端代码更新通过重新构建与重启发布。
 
 HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 Windows、Android、iOS 或 WebGL 后，必须针对新目标重新执行第 3 步；Framework 中可能影响 AOT 引用的代码变更后也应重新生成。
 
-远端默认目录规则为：`{host}/{platform}/{appVersion}`，例如 `http://127.0.0.1:8080/CDN/PC/v1.0`。可在配置中关闭平台和版本后缀。
+远端默认目录规则为：`{host}/{platform}/{appVersion}`，本项目默认为 `http://127.0.0.1:5080/patches/PC/0.1.0`。可在配置中关闭平台和版本后缀。
 
 ## 开发模式
 

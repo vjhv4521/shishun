@@ -3,7 +3,8 @@
   "rootNamespace": "Haven.Framework.Tests",
   "references": [
     "Haven.Framework",
-    "Haven.Hotfix"
+    "Haven.Hotfix",
+    "Haven.Network.FishNet"
   ],
   "includePlatforms": [
     "Editor"

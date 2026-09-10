@@ -1,5 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using Haven.Framework.Composition;
 using Haven.Framework.Core;
 using Haven.Framework.HotUpdate;
 using Haven.Framework.Resources;
@@ -31,13 +34,14 @@ namespace Haven.Framework.Bootstrap
         private FrameworkContext _context;
         private HybridClrHotfixLoader _hotfixLoader;
         private Coroutine _startupCoroutine;
+        private readonly List<IFrameworkServiceInstaller> _installedServices = new List<IFrameworkServiceInstaller>();
 
         public static GameBootstrap Instance => _instance;
         public BootstrapState State { get; private set; } = BootstrapState.Idle;
         public FrameworkError LastError { get; private set; }
         public FrameworkContext Context => _context;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureBootstrapExists()
         {
             if (_instance)
@@ -111,6 +115,20 @@ namespace Haven.Framework.Bootstrap
 
             Report(new HotUpdateProgress(HotUpdateStage.InitializeFramework, 1f, "Core services initialized."));
 
+            FrameworkError installerError = null;
+            yield return InstallAotServices(error => installerError = error);
+            if (installerError != null)
+            {
+                Fail(installerError);
+                yield break;
+            }
+
+#if UNITY_SERVER && !UNITY_EDITOR
+            _context.ContentVersion = Application.version;
+            CompleteStartup("Dedicated Server core services are ready.");
+            yield break;
+#endif
+
             var updateService = new YooAssetUpdateService(_context, resources, Report);
             Exception updateException = null;
             yield return SafeCoroutine.Run(updateService.Run(), exception => updateException = exception);
@@ -149,11 +167,53 @@ namespace Haven.Framework.Bootstrap
                 yield break;
             }
 
+            CompleteStartup("Framework and hotfix runtime are ready.");
+        }
+
+        private IEnumerator InstallAotServices(Action<FrameworkError> failed)
+        {
+            var installers = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include)
+                .OfType<IFrameworkServiceInstaller>()
+                .OrderBy(item => item.Order)
+                .ToArray();
+
+            foreach (var installer in installers)
+            {
+                Exception exception = null;
+                IEnumerator routine;
+                try
+                {
+                    routine = installer.Install(_context);
+                }
+                catch (Exception caught)
+                {
+                    routine = null;
+                    exception = caught;
+                }
+
+                if (routine != null && exception == null)
+                    yield return SafeCoroutine.Run(routine, caught => exception = caught);
+                if (exception != null)
+                {
+                    failed?.Invoke(new FrameworkError(
+                        "BOOT_SERVICE_INSTALL_FAILED",
+                        $"AOT service installer '{installer.GetType().FullName}' failed.",
+                        Module,
+                        false,
+                        exception));
+                    yield break;
+                }
+
+                _installedServices.Add(installer);
+            }
+        }
+
+        private void CompleteStartup(string message)
+        {
             State = BootstrapState.Running;
             _startupCoroutine = null;
-            var completed = new HotUpdateCompleted(_context.ContentVersion);
-            _events.Publish(completed);
-            Report(new HotUpdateProgress(HotUpdateStage.Completed, 1f, "Framework and hotfix runtime are ready."));
+            _events.Publish(new HotUpdateCompleted(_context.ContentVersion));
+            Report(new HotUpdateProgress(HotUpdateStage.Completed, 1f, message));
             GameLog.Info(Module, $"Framework started. contentVersion={_context.ContentVersion}", "BOOT_COMPLETED", _context.CorrelationId);
         }
 
@@ -213,6 +273,18 @@ namespace Haven.Framework.Bootstrap
             State = BootstrapState.ShuttingDown;
             _hotfixLoader?.Shutdown();
             _hotfixLoader = null;
+            for (var index = _installedServices.Count - 1; index >= 0; index--)
+            {
+                try
+                {
+                    _installedServices[index].Uninstall();
+                }
+                catch (Exception exception)
+                {
+                    GameLog.Error(Module, $"AOT service uninstall failed: {_installedServices[index].GetType().FullName}", "BOOT_SERVICE_UNINSTALL_FAILED", exception);
+                }
+            }
+            _installedServices.Clear();
             _services?.Clear();
             _events?.Clear();
             _context = null;

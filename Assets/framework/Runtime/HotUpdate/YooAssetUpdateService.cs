@@ -282,6 +282,8 @@ namespace Haven.Framework.HotUpdate
 
             public IReadOnlyList<string> GetRemoteUrls(string fileName)
             {
+                if (string.Equals(_primary, _fallback, StringComparison.OrdinalIgnoreCase))
+                    return new[] { $"{_primary}/{fileName}" };
                 return new[]
                 {
                     $"{_primary}/{fileName}",

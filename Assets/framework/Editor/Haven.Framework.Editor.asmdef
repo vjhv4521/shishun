@@ -3,7 +3,10 @@
   "rootNamespace": "Haven.Framework.Editor",
   "references": [
     "Haven.Framework",
+    "Haven.Network.FishNet",
+    "FishNet.Runtime",
     "HybridCLR.Editor",
+    "YooAsset",
     "YooAsset.Editor"
   ],
   "includePlatforms": [
