@@ -48,7 +48,11 @@ Unity 完成包导入后，先在 Unity Hub 安装实际发布平台的 **Build 
 
 HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 Windows、Android、iOS 或 WebGL 后，必须针对新目标重新执行第 3 步；Framework 中可能影响 AOT 引用的代码变更后也应重新生成。
 
+<<<<<<< Updated upstream
 远端默认目录规则为：`{host}/{platform}/{appVersion}`，例如 `http://127.0.0.1:8080/CDN/PC/v1.0`。可在配置中关闭平台和版本后缀。
+=======
+远端默认目录规则为：`{host}/{platform}/{appVersion}`。编辑器保持 `EditorDirect`；在私人局域网中运行 `scripts/setup-lan-hotupdate.ps1 -SetPrivateProfile` 后，脚本会把主、备用 Host 更新为服务器当前内网地址，最终请求形如 `http://192.168.x.x:5080/patches/PC/0.1.0`。可在配置中关闭平台和版本后缀。
+>>>>>>> Stashed changes
 
 ## 开发模式
 
@@ -72,3 +76,11 @@ HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 W
 - `Generated` 中包含所有热更 DLL 和配置中的 AOT DLL，YooAsset 收集规则为 `PackRawFile`。
 - 验证无更新、有更新、下载失败重试、旧资源回退四条路径。
 - 每次发布绑定客户端版本、资源版本、Git 标签与构建目标；不要把 API 密钥写入客户端配置或日志。
+
+## 双人局域网发布约定
+
+- `ZENG` 是唯一发布服务器，Gateway 仅在私人 LAN 的 TCP `5080` 上提供 `/health` 与 `/patches`。
+- 只有发布者覆盖 `Build/LocalServer/patches`；合作伙伴提交源码并下载补丁，`Build/` 不进入 Git。
+- 资源变化执行 `Haven/Content/1. Build Current Assets and Publish Locally`；`Assets/Hotfix` 代码变化执行 `Haven/Content/2. Compile Hotfix and Publish Locally`。
+- Framework、Unity/包版本、AOT 契约或原生配置变化时提升 App Version，重新 Generate All、构建补丁与完整客户端。
+- 完整操作步骤及验收命令见仓库根目录 `docs/LAN_HOT_UPDATE.md`。
