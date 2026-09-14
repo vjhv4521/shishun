@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e7b0b17f6fd11454bbecf330486d4a15
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Plants/BerryBushRed.asset
+  uploadId: 720557

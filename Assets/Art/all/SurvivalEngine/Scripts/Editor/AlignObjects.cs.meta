@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 777f875ee8fe3244da6d4d5efb7087c3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Scripts/Editor/AlignObjects.cs
+  uploadId: 720557

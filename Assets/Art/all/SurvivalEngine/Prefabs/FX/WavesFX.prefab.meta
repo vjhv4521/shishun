@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d73142b0a32aa3f469a6344a727d7fab
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/FX/WavesFX.prefab
+  uploadId: 720557

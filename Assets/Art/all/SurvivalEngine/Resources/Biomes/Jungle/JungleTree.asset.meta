@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f0e868c235596f3439262cb6131d4563
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Biomes/Jungle/JungleTree.asset
+  uploadId: 720557

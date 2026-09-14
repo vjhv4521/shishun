@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7415804d79a06514db64b07b1f2b6f45
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/CookMeat.asset
+  uploadId: 720557

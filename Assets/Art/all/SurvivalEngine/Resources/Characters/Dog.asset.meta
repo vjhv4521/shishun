@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 64fda255cf14a174fb2dea416fce37c4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Characters/Dog.asset
+  uploadId: 720557

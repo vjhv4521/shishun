@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ead2d95d5b517284298b7eeb951c76ba
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Equip/HatEquip.prefab
+  uploadId: 720557

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6d5b079e35cacc549812ab40e5394d50
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 23800000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Scenes/TestMap/NavMesh-NavMesh.asset
+  uploadId: 720557

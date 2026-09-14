@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2d861877cbe6d064aa3c0c3b6ec412f5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Characters/Bee.asset
+  uploadId: 720557

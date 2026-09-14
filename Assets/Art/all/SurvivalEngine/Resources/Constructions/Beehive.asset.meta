@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c66c3a0f0e75dee47969271ccc813df7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Constructions/Beehive.asset
+  uploadId: 720557

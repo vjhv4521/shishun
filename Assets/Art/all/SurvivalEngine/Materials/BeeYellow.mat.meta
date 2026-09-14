@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4fd3c4794d7b3384c9691673613825af
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/BeeYellow.mat
+  uploadId: 720557

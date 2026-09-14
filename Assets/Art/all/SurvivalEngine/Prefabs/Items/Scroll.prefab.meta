@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ccb85061b770dcb4e8b0ddd18f873d7e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Scroll.prefab
+  uploadId: 720557

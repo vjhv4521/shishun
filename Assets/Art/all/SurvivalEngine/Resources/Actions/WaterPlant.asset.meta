@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: aa1baa76ee732ad48992a95dbb74167e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/WaterPlant.asset
+  uploadId: 720557

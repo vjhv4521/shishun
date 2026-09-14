@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a6af0e9bd92156342b3033e1b395493d
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Equip/AxeEquip.prefab
+  uploadId: 720557

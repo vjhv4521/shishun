@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8d9351399b884fb4e88804d53c25dd65
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/ChickenCurry.prefab
+  uploadId: 720557

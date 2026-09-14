@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e4493df2cdf298349861ac4a62446d88
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Scripts/Editor/ReplacePrefab.cs
+  uploadId: 720557

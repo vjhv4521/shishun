@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4e2fb239fd67fb643bae922ffa3cec8e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Terrain/CliffRamp.prefab
+  uploadId: 720557

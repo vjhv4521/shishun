@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f4141e6fc0a0d3046953dddcfc336d75
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Groups/UseShovel.asset
+  uploadId: 720557

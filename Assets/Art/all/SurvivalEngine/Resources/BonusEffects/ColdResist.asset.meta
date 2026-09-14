@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 79d2967726663e74a9ead22b6541d2f3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/BonusEffects/ColdResist.asset
+  uploadId: 720557

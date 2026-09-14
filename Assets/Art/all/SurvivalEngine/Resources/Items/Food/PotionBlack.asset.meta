@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e5074941b7566b7438de4d10d0b0f3ee
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Food/PotionBlack.asset
+  uploadId: 720557

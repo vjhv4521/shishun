@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 56d2a7cffd5b93f43ba8e6f5cb40b6dc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Levels/Mining/mining3.asset
+  uploadId: 720557

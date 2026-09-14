@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4da9de4a21e849a4a80a4a7d8093a171
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Food/ChickenCooked.asset
+  uploadId: 720557

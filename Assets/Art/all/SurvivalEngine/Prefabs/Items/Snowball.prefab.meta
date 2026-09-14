@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 187a2e1b2c0a72f4fb23c3113c5edfe1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Snowball.prefab
+  uploadId: 720557

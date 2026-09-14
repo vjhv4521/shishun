@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c9408c9b0e211c54e8423556b4cc028b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/GoldCoin.prefab
+  uploadId: 720557

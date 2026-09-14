@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cd62742a97370a745b2c8e13afeb0c8c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/PlayerCharacterGirl.prefab
+  uploadId: 720557

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4a0a5e651c3a237458b5cbcd54d3443e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Scripts/UI/ActionProgress.cs
+  uploadId: 720557

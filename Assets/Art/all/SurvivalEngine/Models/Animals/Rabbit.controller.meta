@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9b79e3d31779ea8419ef854d719ac956
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Models/Animals/Rabbit.controller
+  uploadId: 720557

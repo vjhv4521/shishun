@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2dc7b53d909b50c4bb313e4e88d1cb87
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/TheCamera3PS.prefab
+  uploadId: 720557

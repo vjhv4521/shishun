@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2b94e4bbb8bf4cb48b46286a8f5a473f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/Drink.asset
+  uploadId: 720557

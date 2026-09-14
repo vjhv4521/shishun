@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 080476b801332ef40b5af375c6f239f3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Animations/CraftBarHidden.anim
+  uploadId: 720557

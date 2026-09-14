@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7b4fe2922a9dcf244bf21439b9c24757
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Food/ChickenRaw.asset
+  uploadId: 720557

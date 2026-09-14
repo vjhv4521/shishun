@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4f2879b4248c6ab418be824ee72c7156
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/ToolMetal.mat
+  uploadId: 720557

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4b52a1a8ad62d6744b8022ab85238576
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/MeatRaw.prefab
+  uploadId: 720557

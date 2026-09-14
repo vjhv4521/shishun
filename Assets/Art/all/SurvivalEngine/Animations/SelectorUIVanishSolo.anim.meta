@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8ab4bab7b7ea0c244ab785dab04aeeac
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Animations/SelectorUIVanishSolo.anim
+  uploadId: 720557

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a6c074b9797250d4ba9326eecde61425
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Equipment/FishRod.asset
+  uploadId: 720557

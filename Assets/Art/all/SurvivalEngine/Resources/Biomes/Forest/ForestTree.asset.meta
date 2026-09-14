@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: cce8d46f9b0b6d940ad057ae8e948c49
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Biomes/Forest/ForestTree.asset
+  uploadId: 720557

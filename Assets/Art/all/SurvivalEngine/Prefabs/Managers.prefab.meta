@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f7d19279e3aed324981280bf309cddcf
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Managers.prefab
+  uploadId: 720557

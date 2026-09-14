@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e6aefdc54225c3e4e9c6356889501213
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Food/Acorn.asset
+  uploadId: 720557

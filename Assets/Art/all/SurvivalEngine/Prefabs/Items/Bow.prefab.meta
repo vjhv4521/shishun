@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8c2138ba114165049aadab2ec3629fe2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Bow.prefab
+  uploadId: 720557

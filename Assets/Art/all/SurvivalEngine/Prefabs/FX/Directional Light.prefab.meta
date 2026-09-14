@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ac58650a42a73e2489bb7556e815928e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/FX/Directional Light.prefab
+  uploadId: 720557

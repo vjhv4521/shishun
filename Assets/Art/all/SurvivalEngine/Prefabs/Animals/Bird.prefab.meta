@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1c00fdbb14384674ba66dd2859f8e14a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Animals/Bird.prefab
+  uploadId: 720557

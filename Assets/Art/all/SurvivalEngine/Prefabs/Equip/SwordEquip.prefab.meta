@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0a2b489c99c8fcb4bb7ad75ae071bd5b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Equip/SwordEquip.prefab
+  uploadId: 720557

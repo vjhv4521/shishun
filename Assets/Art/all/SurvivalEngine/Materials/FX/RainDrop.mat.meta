@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6871314d1726f8a458c570929b37b416
+timeCreated: 1445549522
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/FX/RainDrop.mat
+  uploadId: 720557

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d0b32a33db697824e85c032199767e60
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/HelmetWood.prefab
+  uploadId: 720557

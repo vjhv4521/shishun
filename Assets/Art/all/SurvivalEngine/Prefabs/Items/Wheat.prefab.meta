@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 29d19f8be5938d443af8116128293bd1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Wheat.prefab
+  uploadId: 720557

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 42ee65b146bf03f4488c523578b58823
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Food/SeedTomato.asset
+  uploadId: 720557

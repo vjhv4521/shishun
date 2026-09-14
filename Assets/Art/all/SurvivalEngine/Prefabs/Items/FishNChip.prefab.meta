@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 60af6bf9266356949be1787fd7bfd59a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/FishNChip.prefab
+  uploadId: 720557

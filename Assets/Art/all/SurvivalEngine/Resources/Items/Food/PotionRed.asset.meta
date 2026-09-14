@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 29e821d841e6dbe4db412ab5379ec859
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Food/PotionRed.asset
+  uploadId: 720557

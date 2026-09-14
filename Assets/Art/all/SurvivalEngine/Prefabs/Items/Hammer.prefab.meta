@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c321327e23a9dbc42ac75498772b4d3b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Hammer.prefab
+  uploadId: 720557

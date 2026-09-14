@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c317401f255c47443a1bf3e571579ddc
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Groups/UseAxe.asset
+  uploadId: 720557

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 176a1c7f94206c645820c34afc1af164
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Animations/SelectorUIVisible.anim
+  uploadId: 720557

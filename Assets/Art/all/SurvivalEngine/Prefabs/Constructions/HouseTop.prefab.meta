@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 891cbbe4d4c985d449d32ffc1ae9a364
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Constructions/HouseTop.prefab
+  uploadId: 720557

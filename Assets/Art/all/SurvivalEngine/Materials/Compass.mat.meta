@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 58841ec1895931d4b8661aa1911a5121
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/Compass.mat
+  uploadId: 720557

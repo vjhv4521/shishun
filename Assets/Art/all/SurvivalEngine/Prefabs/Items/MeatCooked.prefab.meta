@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 800e2a39882a2b347ad9c5c2fcc33474
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/MeatCooked.prefab
+  uploadId: 720557

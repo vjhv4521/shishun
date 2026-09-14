@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7e60e75ee6243b6429dd1ca2c53c6e9d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/FloorJungle.mat
+  uploadId: 720557

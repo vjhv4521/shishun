@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5ed3a56b9be4b1347a598a3de5b5d1a3
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Constructions/Hut.prefab
+  uploadId: 720557

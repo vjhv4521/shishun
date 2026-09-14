@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 42bcb05964dbac34d916fa837059bf42
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Equip/NutgunEquip.prefab
+  uploadId: 720557

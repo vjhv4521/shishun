@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bc7f1331dd18cc946b7ef19d86e73a99
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/FX/ItemMergeFX.prefab
+  uploadId: 720557

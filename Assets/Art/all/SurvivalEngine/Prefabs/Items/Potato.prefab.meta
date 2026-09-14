@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 638bf642e05688542b49a8ea4e454240
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Potato.prefab
+  uploadId: 720557

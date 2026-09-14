@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2ace6267844bf5e4791fed98b0d523b3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/Glass.mat
+  uploadId: 720557

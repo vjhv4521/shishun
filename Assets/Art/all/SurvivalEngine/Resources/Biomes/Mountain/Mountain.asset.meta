@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 392066c6ae655d546933294587b3dfa9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Biomes/Mountain/Mountain.asset
+  uploadId: 720557

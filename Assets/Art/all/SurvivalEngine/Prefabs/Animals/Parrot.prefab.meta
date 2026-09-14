@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 481bf3a52cb204149ac8afd5f0daf5d0
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Animals/Parrot.prefab
+  uploadId: 720557

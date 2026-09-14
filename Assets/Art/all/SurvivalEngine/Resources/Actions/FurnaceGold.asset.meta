@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9d53b51ad17133b47adef5ae5d73f5de
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/FurnaceGold.asset
+  uploadId: 720557

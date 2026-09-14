@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5330dd88c4707ed438352ad4b9f16c08
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Equipment/Hat.asset
+  uploadId: 720557

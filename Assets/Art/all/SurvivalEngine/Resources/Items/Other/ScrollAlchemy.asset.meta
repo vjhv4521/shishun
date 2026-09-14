@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 112d5c0a945edac42bae2d51f53237ea
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Items/Other/ScrollAlchemy.asset
+  uploadId: 720557

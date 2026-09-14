@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0edc3c79ca7ed00478971f84cd3141ec
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Groups/UseFishing.asset
+  uploadId: 720557

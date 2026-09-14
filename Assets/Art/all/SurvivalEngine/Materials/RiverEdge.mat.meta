@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a0e3b2451ba13bf4ea538049138b2164
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/RiverEdge.mat
+  uploadId: 720557

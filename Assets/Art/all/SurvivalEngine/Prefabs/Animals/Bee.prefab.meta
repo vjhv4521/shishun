@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0a09a0792f0ae71478181e4e47b9e0ad
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Animals/Bee.prefab
+  uploadId: 720557

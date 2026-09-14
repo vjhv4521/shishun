@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: eefd9b1014fafb1489095b7a246bd4f5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Diamond.prefab
+  uploadId: 720557

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5df31f1ab083ed84088abf630fc2a46a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Decoration/GrassSquare.prefab
+  uploadId: 720557

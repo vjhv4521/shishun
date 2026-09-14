@@ -835,7 +835,7 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
     Server: FISHNET;FISHNET_V4
-    Standalone: FISHNET;FISHNET_V4
+    Standalone: FISHNET;FISHNET_V4;SURVIVAL_ENGINE
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

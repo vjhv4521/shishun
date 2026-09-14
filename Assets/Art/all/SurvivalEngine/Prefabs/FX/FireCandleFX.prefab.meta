@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 505202d331efbf7449c56c0236670779
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/FX/FireCandleFX.prefab
+  uploadId: 720557

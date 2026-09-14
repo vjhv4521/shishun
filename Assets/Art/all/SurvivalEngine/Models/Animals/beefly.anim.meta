@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9bca176dac97c3f4f9d620ae7c5babb8
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Models/Animals/beefly.anim
+  uploadId: 720557

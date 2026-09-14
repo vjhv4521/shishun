@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 651a77e02a5ae7644949a496566b3d3c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Constructions/HouseDeck.prefab
+  uploadId: 720557

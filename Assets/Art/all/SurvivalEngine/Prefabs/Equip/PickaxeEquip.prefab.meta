@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f2d9a8d6c235c944badbdc1c3d528af6
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Equip/PickaxeEquip.prefab
+  uploadId: 720557

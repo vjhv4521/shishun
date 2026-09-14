@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 041ad9156e158d74bacd3c182c9ea6af
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Plants/CarrotPlant.asset
+  uploadId: 720557

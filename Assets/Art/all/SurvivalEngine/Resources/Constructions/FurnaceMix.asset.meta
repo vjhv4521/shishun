@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a83674bc91aba1f4abbcec88b5d0a145
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Constructions/FurnaceMix.asset
+  uploadId: 720557

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: dbe7310672d6ba74c8dfc4133561092a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Weather/Rain.asset
+  uploadId: 720557

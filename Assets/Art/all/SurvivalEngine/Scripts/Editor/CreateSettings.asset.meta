@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ad2809f45234ad14ea5c8c16bafaaac6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Scripts/Editor/CreateSettings.asset
+  uploadId: 720557

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3bd4fc8444ecac344a7992f8733cac6b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/HamBrunch.prefab
+  uploadId: 720557

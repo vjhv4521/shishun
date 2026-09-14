@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 94f9874ab7ff5f547b88bbb8a6960c83
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/PetTame.asset
+  uploadId: 720557

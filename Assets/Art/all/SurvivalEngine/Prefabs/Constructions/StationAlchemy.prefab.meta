@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3b520c866445c0e4b842084ba7fdf275
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Constructions/StationAlchemy.prefab
+  uploadId: 720557

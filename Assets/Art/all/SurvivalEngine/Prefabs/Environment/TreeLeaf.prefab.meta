@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e7057d4fce004d64683edd4236cda28b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Environment/TreeLeaf.prefab
+  uploadId: 720557

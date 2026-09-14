@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4de5b681e968bab41b159d503cadb806
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/CutGrass.asset
+  uploadId: 720557

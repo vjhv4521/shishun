@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 656dd7dbdde7cc44dbbaa9e178a1da03
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Resources/Actions/Dig.asset
+  uploadId: 720557

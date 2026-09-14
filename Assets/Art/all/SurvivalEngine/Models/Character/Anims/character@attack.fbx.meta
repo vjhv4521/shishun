@@ -1,0 +1,714 @@
+fileFormatVersion: 2
+guid: 676e84733c253c741acd800bbec8c9b6
+ModelImporter:
+  serializedVersion: 20300
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: armature
+  - first:
+      1: 100002
+    second: Character
+  - first:
+      1: 100004
+    second: //RootNode
+  - first:
+      1: 100006
+    second: chest
+  - first:
+      1: 100008
+    second: f_middle.01.L
+  - first:
+      1: 100010
+    second: f_middle.01.R
+  - first:
+      1: 100012
+    second: f_middle.02.L
+  - first:
+      1: 100014
+    second: f_middle.02.R
+  - first:
+      1: 100016
+    second: f_middle.03.L
+  - first:
+      1: 100018
+    second: f_middle.03.L_end
+  - first:
+      1: 100020
+    second: f_middle.03.L_end_end
+  - first:
+      1: 100022
+    second: f_middle.03.L_end_end_end
+  - first:
+      1: 100024
+    second: f_middle.03.L_end_end_end_end
+  - first:
+      1: 100026
+    second: f_middle.03.R
+  - first:
+      1: 100028
+    second: f_middle.03.R_end
+  - first:
+      1: 100030
+    second: f_middle.03.R_end_end
+  - first:
+      1: 100032
+    second: f_middle.03.R_end_end_end
+  - first:
+      1: 100034
+    second: f_middle.03.R_end_end_end_end
+  - first:
+      1: 100036
+    second: foot.L
+  - first:
+      1: 100038
+    second: foot.L_end
+  - first:
+      1: 100040
+    second: foot.L_end_end
+  - first:
+      1: 100042
+    second: foot.L_end_end_end
+  - first:
+      1: 100044
+    second: foot.L_end_end_end_end
+  - first:
+      1: 100046
+    second: foot.R
+  - first:
+      1: 100048
+    second: foot.R_end
+  - first:
+      1: 100050
+    second: foot.R_end_end
+  - first:
+      1: 100052
+    second: foot.R_end_end_end
+  - first:
+      1: 100054
+    second: foot.R_end_end_end_end
+  - first:
+      1: 100056
+    second: forearm.L
+  - first:
+      1: 100058
+    second: forearm.R
+  - first:
+      1: 100060
+    second: hand.L
+  - first:
+      1: 100062
+    second: hand.R
+  - first:
+      1: 100064
+    second: head
+  - first:
+      1: 100066
+    second: head_end
+  - first:
+      1: 100068
+    second: head_end_end
+  - first:
+      1: 100070
+    second: head_end_end_end
+  - first:
+      1: 100072
+    second: head_end_end_end_end
+  - first:
+      1: 100074
+    second: hips
+  - first:
+      1: 100076
+    second: neck
+  - first:
+      1: 100078
+    second: shin.L
+  - first:
+      1: 100080
+    second: shin.R
+  - first:
+      1: 100082
+    second: shoulder.L
+  - first:
+      1: 100084
+    second: shoulder.R
+  - first:
+      1: 100086
+    second: spine
+  - first:
+      1: 100088
+    second: thigh.L
+  - first:
+      1: 100090
+    second: thigh.R
+  - first:
+      1: 100092
+    second: thumb.01.L
+  - first:
+      1: 100094
+    second: thumb.01.R
+  - first:
+      1: 100096
+    second: thumb.02.L
+  - first:
+      1: 100098
+    second: thumb.02.R
+  - first:
+      1: 100100
+    second: thumb.03.L
+  - first:
+      1: 100102
+    second: thumb.03.L_end
+  - first:
+      1: 100104
+    second: thumb.03.L_end_end
+  - first:
+      1: 100106
+    second: thumb.03.L_end_end_end
+  - first:
+      1: 100108
+    second: thumb.03.L_end_end_end_end
+  - first:
+      1: 100110
+    second: thumb.03.R
+  - first:
+      1: 100112
+    second: thumb.03.R_end
+  - first:
+      1: 100114
+    second: thumb.03.R_end_end
+  - first:
+      1: 100116
+    second: thumb.03.R_end_end_end
+  - first:
+      1: 100118
+    second: thumb.03.R_end_end_end_end
+  - first:
+      1: 100120
+    second: upper_arm.L
+  - first:
+      1: 100122
+    second: upper_arm.R
+  - first:
+      4: 400000
+    second: armature
+  - first:
+      4: 400002
+    second: Character
+  - first:
+      4: 400004
+    second: //RootNode
+  - first:
+      4: 400006
+    second: chest
+  - first:
+      4: 400008
+    second: f_middle.01.L
+  - first:
+      4: 400010
+    second: f_middle.01.R
+  - first:
+      4: 400012
+    second: f_middle.02.L
+  - first:
+      4: 400014
+    second: f_middle.02.R
+  - first:
+      4: 400016
+    second: f_middle.03.L
+  - first:
+      4: 400018
+    second: f_middle.03.L_end
+  - first:
+      4: 400020
+    second: f_middle.03.L_end_end
+  - first:
+      4: 400022
+    second: f_middle.03.L_end_end_end
+  - first:
+      4: 400024
+    second: f_middle.03.L_end_end_end_end
+  - first:
+      4: 400026
+    second: f_middle.03.R
+  - first:
+      4: 400028
+    second: f_middle.03.R_end
+  - first:
+      4: 400030
+    second: f_middle.03.R_end_end
+  - first:
+      4: 400032
+    second: f_middle.03.R_end_end_end
+  - first:
+      4: 400034
+    second: f_middle.03.R_end_end_end_end
+  - first:
+      4: 400036
+    second: foot.L
+  - first:
+      4: 400038
+    second: foot.L_end
+  - first:
+      4: 400040
+    second: foot.L_end_end
+  - first:
+      4: 400042
+    second: foot.L_end_end_end
+  - first:
+      4: 400044
+    second: foot.L_end_end_end_end
+  - first:
+      4: 400046
+    second: foot.R
+  - first:
+      4: 400048
+    second: foot.R_end
+  - first:
+      4: 400050
+    second: foot.R_end_end
+  - first:
+      4: 400052
+    second: foot.R_end_end_end
+  - first:
+      4: 400054
+    second: foot.R_end_end_end_end
+  - first:
+      4: 400056
+    second: forearm.L
+  - first:
+      4: 400058
+    second: forearm.R
+  - first:
+      4: 400060
+    second: hand.L
+  - first:
+      4: 400062
+    second: hand.R
+  - first:
+      4: 400064
+    second: head
+  - first:
+      4: 400066
+    second: head_end
+  - first:
+      4: 400068
+    second: head_end_end
+  - first:
+      4: 400070
+    second: head_end_end_end
+  - first:
+      4: 400072
+    second: head_end_end_end_end
+  - first:
+      4: 400074
+    second: hips
+  - first:
+      4: 400076
+    second: neck
+  - first:
+      4: 400078
+    second: shin.L
+  - first:
+      4: 400080
+    second: shin.R
+  - first:
+      4: 400082
+    second: shoulder.L
+  - first:
+      4: 400084
+    second: shoulder.R
+  - first:
+      4: 400086
+    second: spine
+  - first:
+      4: 400088
+    second: thigh.L
+  - first:
+      4: 400090
+    second: thigh.R
+  - first:
+      4: 400092
+    second: thumb.01.L
+  - first:
+      4: 400094
+    second: thumb.01.R
+  - first:
+      4: 400096
+    second: thumb.02.L
+  - first:
+      4: 400098
+    second: thumb.02.R
+  - first:
+      4: 400100
+    second: thumb.03.L
+  - first:
+      4: 400102
+    second: thumb.03.L_end
+  - first:
+      4: 400104
+    second: thumb.03.L_end_end
+  - first:
+      4: 400106
+    second: thumb.03.L_end_end_end
+  - first:
+      4: 400108
+    second: thumb.03.L_end_end_end_end
+  - first:
+      4: 400110
+    second: thumb.03.R
+  - first:
+      4: 400112
+    second: thumb.03.R_end
+  - first:
+      4: 400114
+    second: thumb.03.R_end_end
+  - first:
+      4: 400116
+    second: thumb.03.R_end_end_end
+  - first:
+      4: 400118
+    second: thumb.03.R_end_end_end_end
+  - first:
+      4: 400120
+    second: upper_arm.L
+  - first:
+      4: 400122
+    second: upper_arm.R
+  - first:
+      21: 2100000
+    second: Material.005
+  - first:
+      21: 2100002
+    second: Material.001
+  - first:
+      21: 2100004
+    second: Material.006
+  - first:
+      21: 2100006
+    second: Material.004
+  - first:
+      21: 2100008
+    second: Material.002
+  - first:
+      21: 2100010
+    second: Material.003
+  - first:
+      43: 4300000
+    second: Character
+  - first:
+      74: 7400000
+    second: character_attack
+  - first:
+      95: 9500000
+    second: //RootNode
+  - first:
+      137: 13700000
+    second: Character
+  externalObjects: {}
+  materials:
+    materialImportMode: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: "\nClip 'armature|Attack' has import animation warnings
+      that might lower retargeting quality:\nNote: Activate translation DOF on avatar
+      to improve retargeting quality.\n\t'thigh.L' has translation animation that
+      will be discarded.\n\t'thigh.R' has translation animation that will be discarded.\n"
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: character_attack
+      takeName: armature|Attack
+      internalID: 0
+      firstFrame: 0
+      lastFrame: 47
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    fileIdsGeneration: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton:
+    - name: character@attack(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: armature
+      parentName: character@attack(Clone)
+      position: {x: 0.049928665, y: 1.3404329, z: 0.031352695}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 99.999985, y: 99.99996, z: 99.999985}
+    - name: hips
+      parentName: armature
+      position: {x: -0.0008627837, y: 0.0007233451, z: 0.00043892392}
+      rotation: {x: 0.7494149, y: 0.24214612, z: 0.18946818, w: 0.5863825}
+      scale: {x: 0.99999976, y: 0.99999976, z: 1}
+    - name: spine
+      parentName: hips
+      position: {x: 1.2572854e-10, y: 0.002331293, z: 1.6298145e-11}
+      rotation: {x: -0.0546678, y: 0.000000045967198, z: -0.000000007444548, w: 0.99850464}
+      scale: {x: 1.0000001, y: 1, z: 1}
+    - name: chest
+      parentName: spine
+      position: {x: -1.3969838e-11, y: 0.0020834226, z: 4.6566126e-11}
+      rotation: {x: -0.0907843, y: -0.00000011640233, z: 0.0000000017409234, w: 0.9958706}
+      scale: {x: 0.9999999, y: 1.0000005, z: 0.9999999}
+    - name: neck
+      parentName: chest
+      position: {x: -6.519258e-11, y: 0.0042523667, z: 7.8231094e-10}
+      rotation: {x: 0.26947525, y: 0.00000025711722, z: -0.000000016125915, w: 0.96300733}
+      scale: {x: 0.99999976, y: 0.99999976, z: 0.99999994}
+    - name: head
+      parentName: neck
+      position: {x: 1.7695129e-10, y: 0.0011696666, z: -1.11758706e-10}
+      rotation: {x: -0.2676416, y: -0.00000019142895, z: -0.000000038067213, w: 0.9635185}
+      scale: {x: 0.9999999, y: 1.0000005, z: 0.9999999}
+    - name: shoulder.L
+      parentName: chest
+      position: {x: -0.00023980468, y: 0.0034069114, z: 0.00070140534}
+      rotation: {x: -0.5796645, y: 0.38390398, z: 0.44377494, w: 0.56539416}
+      scale: {x: 1.0000012, y: 0.9999999, z: 0.9999996}
+    - name: upper_arm.L
+      parentName: shoulder.L
+      position: {x: 0.0000032368673, y: 0.0029650591, z: -0.00012940174}
+      rotation: {x: -0.08836768, y: -0.75296974, z: -0.100904725, w: 0.6442406}
+      scale: {x: 0.9999997, y: 1.0000005, z: 0.9999995}
+    - name: forearm.L
+      parentName: upper_arm.L
+      position: {x: 9.685754e-10, y: 0.00548419, z: -2.2671884e-10}
+      rotation: {x: 0.009714214, y: 0.018477615, z: 0.004041693, w: 0.9997739}
+      scale: {x: 1.0000005, y: 1.0000001, z: 0.99999964}
+    - name: hand.L
+      parentName: forearm.L
+      position: {x: 0.0000000023911706, y: 0.0049681948, z: -1.44355e-10}
+      rotation: {x: 0.05068556, y: -0.71140647, z: 0.020891601, w: 0.70063937}
+      scale: {x: 0.9999991, y: 1.0000004, z: 1.0000005}
+    - name: thumb.01.L
+      parentName: hand.L
+      position: {x: 0.0007038722, y: 0.0012085678, z: -0.000117279786}
+      rotation: {x: -0.22576433, y: -0.62089735, z: -0.27153048, w: 0.6998487}
+      scale: {x: 0.99999976, y: 1, z: 1.0000001}
+    - name: thumb.02.L
+      parentName: thumb.01.L
+      position: {x: -2.7939677e-11, y: 0.00088740804, z: -4.4703483e-10}
+      rotation: {x: 0.025165621, y: -0.06719667, z: 0.023964483, w: 0.99713445}
+      scale: {x: 0.9999995, y: 0.9999989, z: 1.0000005}
+    - name: thumb.03.L
+      parentName: thumb.02.L
+      position: {x: 0.000000002356246, y: 0.0007109975, z: 0.0000000015646219}
+      rotation: {x: 0.0062486655, y: -0.019388117, z: 0.043863766, w: 0.99882984}
+      scale: {x: 1.0000004, y: 0.9999999, z: 1.0000004}
+    - name: f_middle.01.L
+      parentName: hand.L
+      position: {x: -0.000069351794, y: 0.0022685886, z: -0.00006175463}
+      rotation: {x: 0.021816328, y: -0.018550746, z: 0.0168334, w: 0.9994481}
+      scale: {x: 1.0000007, y: 1.0000005, z: 1.0000008}
+    - name: f_middle.02.L
+      parentName: f_middle.01.L
+      position: {x: 8.789357e-11, y: 0.0009746562, z: -0.0000000017858109}
+      rotation: {x: 0.037298154, y: 0.029522995, z: 0.004944538, w: 0.99885577}
+      scale: {x: 1.0000006, y: 1, z: 0.9999998}
+    - name: f_middle.03.L
+      parentName: f_middle.02.L
+      position: {x: -1.5366822e-10, y: 0.00063342, z: 7.8696755e-10}
+      rotation: {x: 0.058153827, y: 0.011547567, z: 0.020860612, w: 0.99802285}
+      scale: {x: 0.9999996, y: 1.000001, z: 1.0000006}
+    - name: shoulder.R
+      parentName: chest
+      position: {x: 0.00023980456, y: 0.0034069114, z: 0.00070140493}
+      rotation: {x: -0.42249787, y: -0.5683302, z: -0.5794047, w: 0.40346813}
+      scale: {x: 0.99999994, y: 1.0000001, z: 0.9999995}
+    - name: upper_arm.R
+      parentName: shoulder.R
+      position: {x: -0.0000032371654, y: 0.0029650577, z: -0.00012939978}
+      rotation: {x: 0.07636462, y: 0.7267327, z: -0.11908112, w: 0.6721962}
+      scale: {x: 0.9999999, y: 0.99999994, z: 0.9999991}
+    - name: forearm.R
+      parentName: upper_arm.R
+      position: {x: 0.0000000012665987, y: 0.0054841978, z: 1.0244548e-10}
+      rotation: {x: 0.035805296, y: -0.019932179, z: 0.002946976, w: 0.99915564}
+      scale: {x: 1.0000006, y: 0.9999995, z: 1.0000013}
+    - name: hand.R
+      parentName: forearm.R
+      position: {x: -0.000000003427267, y: 0.0049682027, z: -5.2154064e-10}
+      rotation: {x: 0.050685953, y: 0.71140623, z: -0.020891884, w: 0.70063955}
+      scale: {x: 0.9999993, y: 0.999999, z: 0.9999996}
+    - name: thumb.01.R
+      parentName: hand.R
+      position: {x: -0.0007038724, y: 0.001208568, z: -0.00011728272}
+      rotation: {x: -0.17384063, y: 0.63854563, z: 0.3029128, w: 0.68577164}
+      scale: {x: 0.9999992, y: 1.0000006, z: 1.0000005}
+    - name: thumb.02.R
+      parentName: thumb.01.R
+      position: {x: 2.6542693e-10, y: 0.0008874065, z: -2.6077032e-10}
+      rotation: {x: 0.025165852, y: 0.06719652, z: -0.023963664, w: 0.99713445}
+      scale: {x: 0.9999995, y: 1.0000005, z: 1.0000002}
+    - name: thumb.03.R
+      parentName: thumb.02.R
+      position: {x: -0.0000000027846545, y: 0.0007109981, z: 2.6077032e-10}
+      rotation: {x: 0.0062508346, y: 0.0193876, z: -0.04386439, w: 0.99882984}
+      scale: {x: 0.99999934, y: 1.0000005, z: 0.9999998}
+    - name: f_middle.01.R
+      parentName: hand.R
+      position: {x: 0.000069351976, y: 0.002268593, z: -0.000061757375}
+      rotation: {x: 0.021814764, y: 0.018551104, z: -0.01683375, w: 0.9994482}
+      scale: {x: 0.9999996, y: 1.0000017, z: 0.9999992}
+    - name: f_middle.02.R
+      parentName: f_middle.01.R
+      position: {x: -0.0000000010477379, y: 0.0009746609, z: 0.0000000055844427}
+      rotation: {x: 0.03730151, y: -0.029521279, z: -0.0049461634, w: 0.99885565}
+      scale: {x: 1.0000004, y: 0.9999986, z: 1.0000005}
+    - name: f_middle.03.R
+      parentName: f_middle.02.R
+      position: {x: 3.8184225e-10, y: 0.00063342304, z: 0.0000000012293457}
+      rotation: {x: -0.0581586, y: 0.011550655, z: 0.020860463, w: -0.99802256}
+      scale: {x: 0.99999964, y: 0.9999998, z: 1.0000006}
+    - name: thigh.L
+      parentName: hips
+      position: {x: -0.00065127865, y: -0.0017568236, z: -0.0009891938}
+      rotation: {x: 0.987884, y: -0.00000006916813, z: -0.00000018247846, w: 0.15519437}
+      scale: {x: 1.0000013, y: 1, z: 0.99999917}
+    - name: shin.L
+      parentName: thigh.L
+      position: {x: -7.4505804e-11, y: 0.004892746, z: 3.72529e-10}
+      rotation: {x: 0.07844381, y: 0.00000016503563, z: -0.000000113484504, w: 0.9969186}
+      scale: {x: 0.9999999, y: 0.9999996, z: 1.0000011}
+    - name: foot.L
+      parentName: shin.L
+      position: {x: 0.0000000017881393, y: 0.0063454937, z: 0}
+      rotation: {x: -0.6506821, y: -0.0000003208946, z: 0.00000017323639, w: 0.75935036}
+      scale: {x: 0.9999993, y: 0.9999995, z: 1.0000005}
+    - name: thigh.R
+      parentName: hips
+      position: {x: 0.0006512797, y: -0.0002448704, z: 0.0027651957}
+      rotation: {x: 0.9878839, y: -0.000000007818016, z: 0.00000006460683, w: 0.1551945}
+      scale: {x: 1.0000002, y: 1.0000005, z: 0.9999999}
+    - name: shin.R
+      parentName: thigh.R
+      position: {x: -4.4703483e-10, y: 0.0048927437, z: 8.5681673e-10}
+      rotation: {x: 0.0784441, y: -0.00000014510589, z: -0.000000024424615, w: 0.99691856}
+      scale: {x: 0.99999946, y: 0.9999989, z: 0.9999999}
+    - name: foot.R
+      parentName: shin.R
+      position: {x: -2.9802322e-10, y: 0.0063454905, z: 0.0000000021606683}
+      rotation: {x: -0.65068245, y: 0.00000032886152, z: -0.00000023199212, w: 0.75935}
+      scale: {x: 0.9999994, y: 0.99999946, z: 1.0000001}
+    - name: Character
+      parentName: character@attack(Clone)
+      position: {x: 0.049928702, y: 1.3404334, z: 0.031352576}
+      rotation: {x: -0.7071067, y: -0.000000032721438, z: 0.000000018356957, w: 0.7071068}
+      scale: {x: 100.00002, y: 99.99997, z: 99.999985}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 1
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Models/Character/Anims/character@attack.fbx
+  uploadId: 720557

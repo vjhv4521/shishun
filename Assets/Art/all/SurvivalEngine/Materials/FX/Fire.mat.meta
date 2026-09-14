@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 14e2b141a55892b44a8d5fd7af55df24
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Materials/FX/Fire.mat
+  uploadId: 720557

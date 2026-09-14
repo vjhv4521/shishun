@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bffe555d7e307c84aad24dab3a667461
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Animals/Squirrel.prefab
+  uploadId: 720557

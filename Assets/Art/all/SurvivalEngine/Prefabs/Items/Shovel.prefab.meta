@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a4d7a8f5430dfd041aa00d99f70a0d54
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 178160
+  packageName: Survival Engine - Crafting, Building, Farming
+  packageVersion: 1.32
+  assetPath: Assets/SurvivalEngine/Prefabs/Items/Shovel.prefab
+  uploadId: 720557
