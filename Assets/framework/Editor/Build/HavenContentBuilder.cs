@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Cryptography;
 using Haven.Framework.HotUpdate;
 using UnityEditor;
 using UnityEditor.Build;
@@ -30,7 +31,7 @@ namespace Haven.Framework.Editor
 
         public static void BuildBaselineForPlayer()
         {
-            BuildAndPublish(EBundledCopyOption.ClearAndCopyAll, Application.version);
+            BuildAndPublish(EBundledCopyOption.ClearAndCopyAll, ResolvePackageVersion());
         }
 
         // Entry point for -executeMethod batch mode. HAVEN_CONTENT_VERSION can override the generated version.
@@ -114,30 +115,80 @@ namespace Haven.Framework.Editor
                 throw new InvalidOperationException($"Refusing to publish outside {allowedRoot}.");
             if (!Directory.Exists(sourceDirectory))
                 throw new DirectoryNotFoundException($"YooAsset output was not found: {sourceDirectory}");
+            var sourceVersion = Path.Combine(sourceDirectory, "DefaultPackage.version");
+            if (!File.Exists(sourceVersion) || string.IsNullOrWhiteSpace(File.ReadAllText(sourceVersion)))
+                throw new InvalidDataException("YooAsset did not produce a valid DefaultPackage.version file.");
 
-            var staging = destination + ".staging";
-            if (Directory.Exists(staging))
-                Directory.Delete(staging, true);
-            CopyDirectory(sourceDirectory, staging);
-            if (Directory.Exists(destination))
-                Directory.Delete(destination, true);
-            Directory.Move(staging, destination);
+            Directory.CreateDirectory(destination);
+            foreach (var sourceFile in Directory.GetFiles(sourceDirectory, "*", SearchOption.AllDirectories))
+            {
+                var relativePath = Path.GetRelativePath(sourceDirectory, sourceFile);
+                if (relativePath.Equals("DefaultPackage.version", StringComparison.OrdinalIgnoreCase) ||
+                    relativePath.StartsWith("OutputCache", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var targetFile = Path.Combine(destination, relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(targetFile) ?? destination);
+                if (File.Exists(targetFile))
+                {
+                    if (!FilesMatch(sourceFile, targetFile))
+                        throw new InvalidDataException($"Refusing to overwrite a published file with different content: {relativePath}");
+                    continue;
+                }
+
+                var temporaryFile = targetFile + ".staging-" + Guid.NewGuid().ToString("N");
+                try
+                {
+                    File.Copy(sourceFile, temporaryFile);
+                    File.Move(temporaryFile, targetFile);
+                }
+                finally
+                {
+                    if (File.Exists(temporaryFile))
+                        File.Delete(temporaryFile);
+                }
+            }
+
+            // The version pointer is promoted last; old manifests and hash-named files stay available for rollback.
+            var targetVersion = Path.Combine(destination, "DefaultPackage.version");
+            var stagedVersion = targetVersion + ".staging-" + Guid.NewGuid().ToString("N");
+            try
+            {
+                File.Copy(sourceVersion, stagedVersion);
+                if (File.Exists(targetVersion))
+                    File.Replace(stagedVersion, targetVersion, targetVersion + ".previous", true);
+                else
+                    File.Move(stagedVersion, targetVersion);
+            }
+            finally
+            {
+                if (File.Exists(stagedVersion))
+                    File.Delete(stagedVersion);
+            }
         }
 
-        private static void CopyDirectory(string source, string destination)
+        private static bool FilesMatch(string left, string right)
         {
-            Directory.CreateDirectory(destination);
-            foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
-                Directory.CreateDirectory(Path.Combine(destination, Path.GetRelativePath(source, directory)));
-            foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
-                File.Copy(file, Path.Combine(destination, Path.GetRelativePath(source, file)), true);
+            if (new FileInfo(left).Length != new FileInfo(right).Length)
+                return false;
+            using var algorithm = SHA256.Create();
+            using var leftStream = File.OpenRead(left);
+            var leftHash = algorithm.ComputeHash(leftStream);
+            using var rightStream = File.OpenRead(right);
+            var rightHash = algorithm.ComputeHash(rightStream);
+            for (var index = 0; index < leftHash.Length; index++)
+            {
+                if (leftHash[index] != rightHash[index])
+                    return false;
+            }
+            return true;
         }
 
         private static string ResolvePackageVersion()
         {
             var supplied = Environment.GetEnvironmentVariable("HAVEN_CONTENT_VERSION");
             return string.IsNullOrWhiteSpace(supplied)
-                ? $"{Application.version}-{DateTime.UtcNow:yyyyMMddHHmmss}"
+                ? $"{Application.version}-{DateTime.UtcNow:yyyyMMddHHmmssfff}"
                 : supplied.Trim();
         }
 
