@@ -1,15 +1,15 @@
 # Haven：联机生存游戏技术垂直切片
 
-这是一个面向客户端/Unity 开发岗位的可运行技术样板：FishNet 权威服务器、DeepSeek 服务端代理，以及 YooAsset + HybridCLR 资源和代码热更新被串成同一条最小闭环。项目使用 Unity `6000.5.5f1`。
+这是一个面向客户端/Unity 开发岗位的技术垂直切片，目标是完成双人局域网生存建造、受约束的 AI NPC 任务和代码/资源热更新。项目使用 Unity `6000.5.5f1`。当前仍处于开发阶段；下列技术原型不等于完整玩法已验收。
 
-## 已完成的闭环
+## 已有技术原型
 
-- FishNet + Tugboat：Windows Dedicated Server，UDP `7770`，最多 4 人。
+- FishNet + Tugboat：已有直连 Dedicated Server 的玩家移动原型，UDP `7770`，配置上限 4 人；房间和权威玩法尚待实现。
 - 服务器权威移动：客户端只提交 WASD 输入，位置由服务器计算并同步。
 - AIGC 安全链路：客户端不能接触 DeepSeek Key；请求经 ServerRpc 到 Dedicated Server，再访问 ASP.NET 网关。
-- 结构化任务：只允许 `Collect`、`Wood/Stone`、`Food` 和数量 `1-10`；网关与游戏服会分别校验。
+- 结构化任务原型：只允许 `Collect`、`Wood/Stone`、`Food` 和数量 `1-10`；尚未连接真实世界状态与任务进度。
 - 可用性保护：请求限流、超时、重试；DeepSeek 不可用时，游戏服返回确定性本地任务。
-- 热更新：客户端启动时从网关 `/patches` 获取 YooAsset 清单和 HybridCLR DLL；Dedicated Server 只随版本重建和重启。
+- 热更新：已有 YooAsset/HybridCLR 启动与本地补丁托管代码；双机首包与增量更新尚待验收。
 - 自动化入口：场景生成、配置校验、热更发布、客户端和服务端构建均有 `Haven` 菜单。
 
 ```mermaid
@@ -38,7 +38,7 @@ flowchart LR
 - `Windows Build Support (IL2CPP)`：客户端的 HybridCLR 构建需要。
 - `Dedicated Server Build Support (Windows)`：服务端构建需要。
 
-当前项目代码、YooAsset 内容构建和测试均已验证；若没有上述两个模块，对应 Player 构建会被 Unity 拒绝。
+完整客户端和 Dedicated Server 构建必须在本机重新验收；此前的内容构建结果不能代替本分支的完整 Player 构建。
 
 ### 2. 准备 Unity 工程
 
@@ -52,18 +52,16 @@ flowchart LR
 
 ### 3. 启动网关
 
-不要把 Key 写入 Unity、`appsettings.json` 或 Git。新开 PowerShell：
+仅在自己的私人路由器或手机热点上配置局域网。先以管理员身份检测当前网络并按 [局域网热更新指南](docs/LAN_HOT_UPDATE.md) 配置防火墙；不要在校园公共 Wi-Fi 上设置 Private。普通 PowerShell 启动网关：
 
 ```powershell
-$env:DeepSeek__ApiKey = '你的 DeepSeek API Key'
-$env:Gateway__SharedToken = '本地自定义长随机字符串'
-./scripts/start-gateway.ps1
+.\scripts\start-gateway.ps1
 ```
 
-检查：
+纯热更新联调不需要 DeepSeek Key；需要真实 AIGC 时才在服务器进程环境变量中设置 `DeepSeek__ApiKey` 和 `Gateway__SharedToken`，不要写入 Unity、`appsettings.json` 或 Git。检查：
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:5080/health
+.\scripts\test-lan-hotupdate.ps1 -ServerAddress 127.0.0.1
 ```
 
 没有 Key 时网关仍可用于热更托管；AIGC 请求会得到 `503`，随后 Dedicated Server 自动使用本地任务降级。
@@ -77,7 +75,7 @@ Unity 菜单：
 - `Haven/Build/Windows Dedicated Server`：构建 `Build/WindowsServer/HavenServer.exe`。
 - `Haven/Build/Windows Client (HybridCLR)`：Generate All、制作首包内容并构建 `Build/WindowsClient/HavenClient.exe`。
 
-客户端构建时工具会临时把热更模式切为 `Host`，构建结束恢复 EditorDirect；服务端构建时会临时关闭 HybridCLR，避免服务端被强制切成 IL2CPP。
+客户端构建时工具会临时把热更模式切为 `Host`，并使用可选的 `HAVEN_PATCH_BASE_URL` 环境变量作为本次构建的补丁地址，构建结束恢复 EditorDirect 与项目内的回环配置；服务端构建时会临时关闭 HybridCLR，避免服务端被强制切成 IL2CPP。详情见 [局域网热更新指南](docs/LAN_HOT_UPDATE.md)。
 
 ### 5. 本地联调
 
@@ -88,7 +86,7 @@ $env:HAVEN_GATEWAY_TOKEN = '与 Gateway__SharedToken 相同的值'
 ./Build/WindowsServer/HavenServer.exe -batchmode -nographics -logFile ./Build/WindowsServer/server.log
 ```
 
-再运行 `HavenClient.exe`，点击“连接 Dedicated Server”，用 WASD 移动，然后点击“由服务器请求 DeepSeek 生成任务”。局域网联调时，把 `HavenNetworkSettings` 的主机/网关地址改为服务器机器的内网 IP，并放行 TCP `5080` 与 UDP `7770`。
+再运行 `HavenClient.exe`，点击“连接 Dedicated Server”，用 WASD 移动，然后点击“由服务器请求 DeepSeek 生成任务”。当前属于技术原型，并非可完成的任务系统。局域网游戏联调需要额外在 Private 网络放行 UDP `7770`，补丁使用 TCP `5080`。
 
 ## 验证命令
 
@@ -96,7 +94,7 @@ $env:HAVEN_GATEWAY_TOKEN = '与 Gateway__SharedToken 相同的值'
 dotnet test ./Server/Haven.Gateway.Tests/Haven.Gateway.Tests.csproj --configuration Release
 ```
 
-Unity 测试可在 Test Runner 中运行 `EditMode`；当前结果为 9/9。网关策略测试当前为 6/6。
+Unity 测试应在 Test Runner 中运行 `EditMode`，并以当前分支实际日志为准；不要沿用旧分支的测试数字。
 
 ## 发布边界
 

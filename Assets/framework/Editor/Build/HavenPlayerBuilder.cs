@@ -64,9 +64,21 @@ namespace Haven.Framework.Editor
             var previousBackend = PlayerSettings.GetScriptingBackend(namedTarget);
             var previousHybridClrEnabled = SettingsUtil.Enable;
             var hotUpdateSettings = AssetDatabase.LoadAssetAtPath<HotUpdateSettings>("Assets/Resources/HavenHotUpdateSettings.asset");
+            if (useHostedContent && !hotUpdateSettings)
+                throw new FileNotFoundException("Haven hot-update settings are missing.", "Assets/Resources/HavenHotUpdateSettings.asset");
             var serializedHotUpdateSettings = hotUpdateSettings ? new SerializedObject(hotUpdateSettings) : null;
             var playModeProperty = serializedHotUpdateSettings?.FindProperty("playMode");
+            var primaryHostProperty = serializedHotUpdateSettings?.FindProperty("primaryHost");
+            var fallbackHostProperty = serializedHotUpdateSettings?.FindProperty("fallbackHost");
             var previousPlayMode = playModeProperty?.enumValueIndex ?? -1;
+            var previousPrimaryHost = primaryHostProperty?.stringValue;
+            var previousFallbackHost = fallbackHostProperty?.stringValue;
+            var buildPatchHost = useHostedContent ? Environment.GetEnvironmentVariable("HAVEN_PATCH_BASE_URL")?.Trim().TrimEnd('/') : null;
+            if (useHostedContent && !string.IsNullOrWhiteSpace(buildPatchHost) &&
+                (!Uri.TryCreate(buildPatchHost, UriKind.Absolute, out var patchUri) ||
+                 (patchUri.Scheme != Uri.UriSchemeHttp && patchUri.Scheme != Uri.UriSchemeHttps) ||
+                 !string.IsNullOrEmpty(patchUri.Query) || !string.IsNullOrEmpty(patchUri.Fragment)))
+                throw new ArgumentException("HAVEN_PATCH_BASE_URL must be an absolute HTTP(S) URL without a query or fragment.");
             try
             {
                 // The authoritative server contains only AOT code and must not be
@@ -76,6 +88,16 @@ namespace Haven.Framework.Editor
                 if (useHostedContent && playModeProperty != null)
                 {
                     playModeProperty.enumValueIndex = (int)HotUpdatePlayMode.Host;
+                    if (!string.IsNullOrWhiteSpace(buildPatchHost))
+                    {
+                        primaryHostProperty.stringValue = buildPatchHost;
+                        fallbackHostProperty.stringValue = buildPatchHost;
+                        Debug.Log($"[Haven] Client patch host for this build: {buildPatchHost}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[Haven] HAVEN_PATCH_BASE_URL is not set. This client will use the configured loopback patch host and cannot download from another PC.");
+                    }
                     serializedHotUpdateSettings.ApplyModifiedPropertiesWithoutUndo();
                     AssetDatabase.SaveAssets();
                 }
@@ -104,6 +126,10 @@ namespace Haven.Framework.Editor
                 if (previousPlayMode >= 0 && playModeProperty != null)
                 {
                     playModeProperty.enumValueIndex = previousPlayMode;
+                    if (primaryHostProperty != null)
+                        primaryHostProperty.stringValue = previousPrimaryHost;
+                    if (fallbackHostProperty != null)
+                        fallbackHostProperty.stringValue = previousFallbackHost;
                     serializedHotUpdateSettings.ApplyModifiedPropertiesWithoutUndo();
                     AssetDatabase.SaveAssets();
                 }
