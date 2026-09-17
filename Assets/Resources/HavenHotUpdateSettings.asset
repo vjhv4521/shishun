@@ -33,4 +33,5 @@ MonoBehaviour:
   - System.dll
   - System.Core.dll
   - Haven.Framework.dll
+  - UnityEngine.JSONSerializeModule.dll
   useLoadedHotfixAssemblyInEditor: 1

@@ -124,10 +124,17 @@ namespace Haven.Framework.Editor
         private static void EnsureRuntimeSettings()
         {
             var asset = AssetDatabase.LoadAssetAtPath<HotUpdateSettings>(SettingsAssetPath);
-            if (asset)
-                return;
-            asset = ScriptableObject.CreateInstance<HotUpdateSettings>();
-            AssetDatabase.CreateAsset(asset, SettingsAssetPath);
+            if (!asset)
+            {
+                asset = ScriptableObject.CreateInstance<HotUpdateSettings>();
+                AssetDatabase.CreateAsset(asset, SettingsAssetPath);
+            }
+            var metadata = MergeDistinct(asset.AotMetadataLocations, new[] { "UnityEngine.JSONSerializeModule.dll" });
+            var serialized = new SerializedObject(asset);
+            var locations = serialized.FindProperty("aotMetadataLocations");
+            locations.arraySize = metadata.Length;
+            for (var index = 0; index < metadata.Length; index++) locations.GetArrayElementAtIndex(index).stringValue = metadata[index];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(asset);
         }
 
@@ -145,7 +152,7 @@ namespace Haven.Framework.Editor
             settings.preserveHotUpdateAssemblies = Array.Empty<string>();
             settings.patchAOTAssemblies = MergeDistinct(
                 settings.patchAOTAssemblies,
-                new[] { "mscorlib", "System", "System.Core", "Haven.Framework" });
+                new[] { "mscorlib", "System", "System.Core", "Haven.Framework", "UnityEngine.JSONSerializeModule" });
             HybridCLRSettings.Save();
         }
 

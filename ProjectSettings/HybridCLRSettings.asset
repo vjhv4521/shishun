@@ -28,6 +28,7 @@ MonoBehaviour:
   - System
   - System.Core
   - Haven.Framework
+  - UnityEngine.JSONSerializeModule
   outputLinkFile: HybridCLRGenerate/link.xml
   outputAOTGenericReferenceFile: HybridCLRGenerate/AOTGenericReferences.cs
   maxGenericReferenceIteration: 10

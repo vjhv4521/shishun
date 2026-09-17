@@ -1,7 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <linker>
   <assembly fullname="Haven.Framework">
+    <type fullname="Haven.Framework.CampQuests.CampNpcChatRequest" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampNpcChatResponse" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampNpcChatTurn" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestCatalog" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestChanged" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestConfiguration" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestDefinition" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestProposal" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestRecord" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestRequest" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestSave" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestView" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.CampQuestWorldState" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.ICampNpcChatGenerator" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.ICampNpcChatService" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.ICampQuestGenerator" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.ICampQuestService" preserve="all" />
+    <type fullname="Haven.Framework.CampQuests.ICampQuestWorldBridge" preserve="all" />
     <type fullname="Haven.Framework.Core.FrameworkContext" preserve="all" />
+    <type fullname="Haven.Framework.Core.FrameworkError" preserve="all" />
     <type fullname="Haven.Framework.Core.FrameworkResult" preserve="all" />
     <type fullname="Haven.Framework.Core.FrameworkResult`1" preserve="all" />
     <type fullname="Haven.Framework.Core.GameLog" preserve="all" />
@@ -9,6 +28,14 @@
     <type fullname="Haven.Framework.Core.IEventBus" preserve="all" />
     <type fullname="Haven.Framework.Core.IHotfixEntry" preserve="all" />
     <type fullname="Haven.Framework.Core.IServiceRegistry" preserve="all" />
+    <type fullname="Haven.Framework.Core.SafeCoroutine" preserve="all" />
+    <type fullname="Haven.Framework.Services.AiQuestRequest" preserve="all" />
+    <type fullname="Haven.Framework.Services.AiQuestResponse" preserve="all" />
+    <type fullname="Haven.Framework.Services.AiQuestSource" preserve="all" />
+    <type fullname="Haven.Framework.Services.ILLMService" preserve="all" />
+    <type fullname="Haven.Framework.Services.INetworkService" preserve="all" />
+    <type fullname="Haven.Framework.Services.NetworkEndpoint" preserve="all" />
+    <type fullname="Haven.Framework.Services.NetworkState" preserve="all" />
   </assembly>
   <assembly fullname="System">
     <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" preserve="all" />
@@ -17,14 +44,23 @@
   </assembly>
   <assembly fullname="System.Core">
     <type fullname="System.Collections.Generic.HashSet`1" preserve="all" />
+    <type fullname="System.Linq.Enumerable" preserve="all" />
+    <type fullname="System.Linq.IOrderedEnumerable`1" preserve="all" />
+  </assembly>
+  <assembly fullname="UnityEngine.JSONSerializeModule">
+    <type fullname="UnityEngine.JsonUtility" preserve="all" />
   </assembly>
   <assembly fullname="mscorlib">
     <type fullname="System.Action`1" preserve="all" />
+    <type fullname="System.ArgumentException" preserve="all" />
     <type fullname="System.ArgumentNullException" preserve="all" />
     <type fullname="System.Array" preserve="all" />
     <type fullname="System.Byte" preserve="all" />
     <type fullname="System.Collections.Generic.Dictionary`2" preserve="all" />
+    <type fullname="System.Collections.Generic.IComparer`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IEnumerable`1" preserve="all" />
     <type fullname="System.Collections.Generic.IEnumerator`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IEqualityComparer`1" preserve="all" />
     <type fullname="System.Collections.Generic.IReadOnlyList`1" preserve="all" />
     <type fullname="System.Collections.Generic.List`1" preserve="all" />
     <type fullname="System.Collections.Generic.List`1/Enumerator" preserve="all" />
@@ -35,9 +71,12 @@
     <type fullname="System.Diagnostics.DebuggerHiddenAttribute" preserve="all" />
     <type fullname="System.Enum" preserve="all" />
     <type fullname="System.Exception" preserve="all" />
+    <type fullname="System.Func`2" preserve="all" />
+    <type fullname="System.Guid" preserve="all" />
     <type fullname="System.IDisposable" preserve="all" />
     <type fullname="System.Int32" preserve="all" />
     <type fullname="System.InvalidOperationException" preserve="all" />
+    <type fullname="System.Math" preserve="all" />
     <type fullname="System.NotSupportedException" preserve="all" />
     <type fullname="System.Object" preserve="all" />
     <type fullname="System.Predicate`1" preserve="all" />
@@ -49,6 +88,7 @@
     <type fullname="System.Runtime.CompilerServices.RuntimeHelpers" preserve="all" />
     <type fullname="System.RuntimeFieldHandle" preserve="all" />
     <type fullname="System.String" preserve="all" />
+    <type fullname="System.StringComparer" preserve="all" />
     <type fullname="System.Type" preserve="all" />
     <type fullname="System.ValueType" preserve="all" />
   </assembly>

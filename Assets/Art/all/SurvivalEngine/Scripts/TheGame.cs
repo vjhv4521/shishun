@@ -428,8 +428,9 @@ namespace SurvivalEngine
             if (beforeSave != null)
                 beforeSave.Invoke(filename);
 
-            PlayerData.Save(filename, PlayerData.Get());
-            return true;
+            bool saved = PlayerData.TrySave(filename, PlayerData.Get(), out string error);
+            if (!saved) Debug.LogError("World save failed: " + error);
+            return saved;
         }
 
         public static void Load()

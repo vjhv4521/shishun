@@ -115,6 +115,11 @@ namespace SurvivalEngine
             press_ui_use = false;
             press_ui_cancel = false;
 
+            // Text entry must not also activate gameplay shortcuts or the pause menu.
+            var selectedUi = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
+            if (selectedUi && selectedUi.TryGetComponent<TMPro.TMP_InputField>(out var textInput) && textInput.isFocused)
+                return;
+
             Vector2 wasd = Vector2.zero;
             Keyboard keyboard = Keyboard.current;
             if(keyboard != null)

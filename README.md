@@ -4,6 +4,8 @@
 
 ## 已有技术原型
 
+新增单机营地委托与管事聊天入口：`Assets/Scenes/WorldGenMap.unity`。玩法、DeepSeek 配置、离线运行与独立构建说明见 [营地物资委托指南](docs/CAMP_QUESTS.md)，实际验证状态见 [验证记录](docs/CAMP_QUEST_VALIDATION.md)。聊天只生成对白，不直接修改背包或任务；这个单机场景不代表下述联机玩法已完成。
+
 - FishNet + Tugboat：已有直连 Dedicated Server 的玩家移动原型，UDP `7770`，配置上限 4 人；房间和权威玩法尚待实现。
 - 服务器权威移动：客户端只提交 WASD 输入，位置由服务器计算并同步。
 - AIGC 安全链路：客户端不能接触 DeepSeek Key；请求经 ServerRpc 到 Dedicated Server，再访问 ASP.NET 网关。

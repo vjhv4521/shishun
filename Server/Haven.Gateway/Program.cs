@@ -13,6 +13,10 @@ builder.Services.Configure<DeepSeekOptions>(builder.Configuration.GetSection(Dee
 builder.Services.Configure<PatchStorageOptions>(builder.Configuration.GetSection(PatchStorageOptions.SectionName));
 builder.Services.AddHttpClient<IDeepSeekClient, DeepSeekClient>();
 builder.Services.AddSingleton<QuestGenerationService>();
+builder.Services.AddSingleton<CampQuestPolicy>();
+builder.Services.AddHttpClient<CampQuestGenerationService>();
+builder.Services.AddSingleton<CampNpcChatPolicy>();
+builder.Services.AddHttpClient<CampNpcChatGenerationService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -97,6 +101,44 @@ app.MapPost("/api/v1/quests/generate", async (
     catch (DeepSeekUnavailableException exception)
     {
         return Results.Json(new { error = "deepseek_unavailable", message = exception.Message }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).RequireRateLimiting("aigc");
+
+app.MapPost("/api/v1/camp-quests/propose", async (
+    CampQuestRequest request, CampQuestPolicy policy, CampQuestGenerationService generator, CancellationToken cancellationToken) =>
+{
+    var error = policy.Validate(request);
+    if (error is not null) return Results.BadRequest(new { error = "invalid_camp_request", message = error });
+    try
+    {
+        return Results.Ok(await generator.GenerateAsync(request, cancellationToken));
+    }
+    catch (InvalidDataException)
+    {
+        return Results.Json(new { error = "invalid_camp_response" }, statusCode: StatusCodes.Status502BadGateway);
+    }
+    catch (DeepSeekUnavailableException)
+    {
+        return Results.Json(new { error = "camp_generator_unavailable" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).RequireRateLimiting("aigc");
+
+app.MapPost("/api/v1/camp-npc/chat", async (
+    CampNpcChatRequest request, CampNpcChatPolicy policy, CampNpcChatGenerationService generator, CancellationToken cancellationToken) =>
+{
+    var error = policy.Validate(request);
+    if (error is not null) return Results.BadRequest(new { error = "invalid_camp_chat", message = error });
+    try
+    {
+        return Results.Ok(await generator.GenerateAsync(request, cancellationToken));
+    }
+    catch (InvalidDataException)
+    {
+        return Results.Json(new { error = "invalid_camp_chat_response" }, statusCode: StatusCodes.Status502BadGateway);
+    }
+    catch (DeepSeekUnavailableException)
+    {
+        return Results.Json(new { error = "camp_chat_unavailable" }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }).RequireRateLimiting("aigc");
 

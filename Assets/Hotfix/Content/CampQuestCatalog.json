@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "quests": [
+    {"id":"night_fuel_small","title":"今夜的柴火","itemId":"wood","quantity":3,"rewardId":"bread","rewardQuantity":1,"condition":"night_fire","priority":100,"large":false,"fallbackDialogue":"天色不早了，营地想再储备一些干柴，为夜里的篝火做好准备。"},
+    {"id":"night_fuel_large","title":"今夜的柴火 · 加量","itemId":"wood","quantity":5,"rewardId":"bread","rewardQuantity":2,"condition":"night_fire","priority":100,"large":true,"fallbackDialogue":"夜里用得上更多干柴。如果你愿意多跑一趟，营地会多准备一份口粮。"},
+    {"id":"fire_preparation_small","title":"生火前的准备","itemId":"rock","quantity":2,"rewardId":"bread","rewardQuantity":1,"condition":"no_fire","priority":90,"large":false,"fallbackDialogue":"营地还没有篝火，先储备一些石料吧。交给我后，你仍需要亲手制作篝火。"},
+    {"id":"fire_preparation_large","title":"生火前的准备 · 加量","itemId":"rock","quantity":4,"rewardId":"bread","rewardQuantity":2,"condition":"no_fire","priority":90,"large":true,"fallbackDialogue":"营地需要一批石料，为以后生火和建设留些余量。我会准备相应的口粮。"},
+    {"id":"defence_wood_small","title":"防线备用木料","itemId":"wood","quantity":3,"rewardId":"bread","rewardQuantity":1,"condition":"few_walls","priority":80,"large":false,"fallbackDialogue":"营地的木墙还不多，我们先储备些修筑防线用的木料。"},
+    {"id":"defence_wood_large","title":"防线备用木料 · 加量","itemId":"wood","quantity":5,"rewardId":"bread","rewardQuantity":2,"condition":"few_walls","priority":80,"large":true,"fallbackDialogue":"如果能多备些木料，之后加固营地就从容一些。你愿意承担这趟补给吗？"},
+    {"id":"reserve_wood","title":"日常木料储备","itemId":"wood","quantity":3,"rewardId":"bread","rewardQuantity":1,"condition":"always","priority":20,"large":false,"fallbackDialogue":"有备无患。营地还能接收一份木料，换些口粮再继续探索吧。"},
+    {"id":"reserve_rock","title":"日常石料储备","itemId":"rock","quantity":2,"rewardId":"bread","rewardQuantity":1,"condition":"always","priority":10,"large":false,"fallbackDialogue":"营地需要日常石料储备，带回来后可以换一份口粮。"}
+  ]
+}

@@ -62,7 +62,8 @@ namespace Haven.Framework.HotUpdate
             "mscorlib.dll",
             "System.dll",
             "System.Core.dll",
-            "Haven.Framework.dll"
+            "Haven.Framework.dll",
+            "UnityEngine.JSONSerializeModule.dll"
         };
         [SerializeField] private bool useLoadedHotfixAssemblyInEditor = true;
 

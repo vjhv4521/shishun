@@ -36,18 +36,47 @@ namespace SurvivalEngine
         //Save any class to a file, make sure the class is marked with [System.Serializable]
         public static void SaveFile<T>(string filename, T data) where T : class
         {
-            if (IsValidFilename(filename))
+            if (!TrySaveFile(filename, data, out string error))
+                Debug.LogError("Error Saving Data: " + error);
+        }
+
+        // Keep the existing save format, but never truncate the last good save before serialization succeeds.
+        public static bool TrySaveFile<T>(string filename, T data, out string error) where T : class
+        {
+            error = null;
+            if (!IsValidFilename(filename) || data == null)
             {
-                FileStream file = null;
-                try
+                error = "Invalid save filename or data.";
+                return false;
+            }
+            string fullpath = Path.Combine(Application.persistentDataPath, filename);
+            string temporary = fullpath + ".tmp-" + Guid.NewGuid().ToString("N");
+            try
+            {
+                Directory.CreateDirectory(Application.persistentDataPath);
+                using (FileStream file = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     BinaryFormatter bf = new BinaryFormatter();
-                    string fullpath = Application.persistentDataPath + "/" + filename;
-                    file = File.Create(fullpath);
                     bf.Serialize(file, data);
-                    file.Close();
+                    file.Flush(true);
                 }
-                catch (System.Exception e) { Debug.Log("Error Saving Data " + e); if (file != null) file.Close(); }
+                if (File.Exists(fullpath)) File.Replace(temporary, fullpath, fullpath + ".bak", true);
+                else File.Move(temporary, fullpath);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+            finally
+            {
+                if (File.Exists(temporary))
+                {
+                    try { File.Delete(temporary); }
+                    catch (IOException) { /* An abandoned temporary file must not turn a failed save into success. */ }
+                    catch (UnauthorizedAccessException) { }
+                }
             }
         }
 

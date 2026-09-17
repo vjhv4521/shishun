@@ -13,6 +13,7 @@
 **/[Oo]bj/
 /[Bb]uild/
 /[Bb]uilds/
+/[Bb]undles/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /HybridCLRData/
@@ -53,6 +54,8 @@
 ExportedObj/
 .consulo/
 *.csproj
+# ASP.NET projects are source, unlike Unity-generated IDE projects.
+!/Server/**/*.csproj
 *.unityproj
 *.sln
 *.slnx

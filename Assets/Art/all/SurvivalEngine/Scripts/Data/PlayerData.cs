@@ -599,17 +599,26 @@ namespace SurvivalEngine
 
         public static void Save(string filename, PlayerData data)
         {
-            if (!string.IsNullOrEmpty(filename) && data != null)
-            {
-                data.filename = filename;
-                data.last_save = DateTime.Now;
-                data.version = Application.version;
-                player_data = data;
-                file_loaded = filename;
+            if (!TrySave(filename, data, out string error))
+                Debug.LogError("World save failed: " + error);
+        }
 
-                SaveTool.SaveFile<PlayerData>(filename + extension, data);
-                SetLastSave(filename);
+        public static bool TrySave(string filename, PlayerData data, out string error)
+        {
+            error = null;
+            if (string.IsNullOrEmpty(filename) || data == null)
+            {
+                error = "Missing world save filename or data.";
+                return false;
             }
+            data.filename = filename;
+            data.last_save = DateTime.Now;
+            data.version = Application.version;
+            if (!SaveTool.TrySaveFile(filename + extension, data, out error)) return false;
+            player_data = data;
+            file_loaded = filename;
+            SetLastSave(filename);
+            return true;
         }
 
         public static void NewGame()

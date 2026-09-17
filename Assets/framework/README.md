@@ -36,6 +36,8 @@ Assets/
 
 `HotUpdateProgress`、`HotUpdateFailed`、`HotUpdateCompleted` 都通过 `IEventBus` 发布，可由补丁 UI 直接订阅。所有错误包含模块、错误码、可重试标志和内部异常；用户提示层不需要展示内部堆栈。
 
+资源字节加载兼容 LegacyBuildPipeline 的 TextAsset 包与原始管线的 RawFileObject；`.rawfile` 扩展名不代表实际的包类型。YooAsset 句柄由资源层显式持有、释放，不能直接交给会 Dispose 嵌套枚举器的 SafeCoroutine。营地任务使用 JsonUtility 泛型，AOT 元数据配置同时包含 `UnityEngine.JSONSerializeModule.dll`。
+
 ## 首次接入
 
 Unity 完成包导入后，先在 Unity Hub 安装实际发布平台的 **Build Support 和 IL2CPP** 模块，再按顺序执行：
@@ -60,6 +62,10 @@ HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 W
 - `Host`：完整执行版本、Manifest、下载与热更流程。
 
 ## 增加业务模块
+
+营地委托与管事聊天模块使用 `Runtime/CampQuests` 的稳定契约，任务与聊天会话逻辑在 `Haven.Hotfix`，旧 SurvivalEngine 适配器及本机 Gateway 客户端在默认程序集 `Assets/HavenCamp/Runtime`；Hotfix 不引用 Assembly-CSharp。聊天只返回文字，不持久化或执行物品交换。只有 `WorldGenMap` 安装适配器时才启用此模块。该场景自带非持久 GameBootstrap，支持旧菜单的场景重载；联机原型沿用原启动方式。
+
+独立入口 `Haven/Build/Windows Camp Quest Demo` 针对 Windows Player 执行 Generate All，制作随包内容并临时使用 Offline，结束后恢复原设置。新增契约改变 AOT 边界，必须重新完整构建，不用于旧客户端原地升级。详细说明与验收状态见 `docs/CAMP_QUESTS.md`。
 
 1. 在 `Assets/Hotfix/Runtime/Modules` 新建 `HotfixModuleBase` 子类。
 2. 通过 `Context.Services` 注册接口，通过 `Context.Events` 发布领域事件。

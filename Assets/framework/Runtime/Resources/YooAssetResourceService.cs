@@ -48,7 +48,9 @@ namespace Haven.Framework.Resources
                 yield break;
             }
 
-            yield return handle;
+            // HandleBase is IEnumerator AND IDisposable. Flattening it through SafeCoroutine
+            // would release it before the caller can inspect the result or transfer the lease.
+            while (!handle.IsDone) yield return null;
             if (handle.Status != EOperationStatus.Succeeded)
             {
                 var error = handle.Error;
@@ -101,7 +103,10 @@ namespace Haven.Framework.Resources
             AssetHandle handle = null;
             try
             {
-                handle = _package.LoadAssetAsync<RawFileObject>(location);
+                // LegacyBuildPipeline stores .bytes as TextAsset inside an AssetBundle,
+                // even when PackRawFile gives the bundle a .rawfile extension. Raw pipelines
+                // instead return RawFileObject. Support both representations without guessing from names.
+                handle = _package.LoadAssetAsync<UnityEngine.Object>(location);
             }
             catch (Exception exception)
             {
@@ -110,7 +115,7 @@ namespace Haven.Framework.Resources
                 yield break;
             }
 
-            yield return handle;
+            while (!handle.IsDone) yield return null;
             if (handle.Status != EOperationStatus.Succeeded)
             {
                 var error = handle.Error;
@@ -120,16 +125,16 @@ namespace Haven.Framework.Resources
                 yield break;
             }
 
-            var rawFile = handle.GetAssetObject<RawFileObject>();
-            if (!rawFile)
+            var rawAsset = handle.GetAssetObject<UnityEngine.Object>();
+            var bytes = rawAsset is RawFileObject rawFile ? rawFile.GetBytes() : (rawAsset as TextAsset)?.bytes;
+            if (bytes == null)
             {
                 handle.Release();
                 completed(FrameworkResult<byte[]>.Failure(
-                    new FrameworkError("RAW_TYPE_MISMATCH", $"Resource '{location}' was not built with PackRawFile.", Module)));
+                    new FrameworkError("RAW_TYPE_MISMATCH", $"Resource '{location}' is neither TextAsset nor RawFileObject.", Module)));
                 yield break;
             }
 
-            var bytes = rawFile.GetBytes();
             var result = bytes == null ? null : (byte[])bytes.Clone();
             handle.Release();
             if (result == null || result.Length == 0)
