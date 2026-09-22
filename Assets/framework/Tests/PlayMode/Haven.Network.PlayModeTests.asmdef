@@ -1,0 +1,23 @@
+{
+  "name": "Haven.Network.PlayModeTests",
+  "rootNamespace": "Haven.Network.PlayModeTests",
+  "references": [
+    "Haven.Framework",
+    "Haven.Network.FishNet",
+    "FishNet.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

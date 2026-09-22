@@ -7,14 +7,17 @@ namespace Haven.Hotfix.Services
 {
     public sealed class OfflineNetworkService : INetworkService
     {
-        public NetworkState State { get; private set; } = NetworkState.Disconnected;
+        public NetworkState State { get; private set; } = NetworkState.Idle;
         public bool IsConnected { get; private set; }
         public int ConnectedPeerCount => IsConnected ? 1 : 0;
+        public NetworkEndpoint ConnectedEndpoint { get; private set; }
+        public FrameworkError LastError => null;
 
         public IEnumerator Connect(NetworkEndpoint endpoint, Action<FrameworkResult> completed)
         {
             State = NetworkState.Connected;
             IsConnected = true;
+            ConnectedEndpoint = endpoint;
             completed?.Invoke(FrameworkResult.Success());
             yield break;
         }
@@ -23,6 +26,7 @@ namespace Haven.Hotfix.Services
         {
             State = NetworkState.Disconnected;
             IsConnected = false;
+            ConnectedEndpoint = default;
         }
     }
 

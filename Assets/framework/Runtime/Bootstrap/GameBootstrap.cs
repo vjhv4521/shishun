@@ -60,7 +60,10 @@ namespace Haven.Framework.Bootstrap
         {
             if (_instance && _instance != this)
             {
-                Destroy(gameObject);
+                // A scene bootstrap may share its GameObject with scene-specific installers
+                // and gameplay objects. Keep that object alive when a persistent bootstrap
+                // already exists; only the duplicate bootstrap component is redundant.
+                Destroy(this);
                 return;
             }
 
@@ -97,6 +100,19 @@ namespace Haven.Framework.Bootstrap
             State = BootstrapState.Idle;
             LastError = null;
             StartFramework();
+        }
+
+        public void RestartForCurrentScene()
+        {
+            PrepareForSceneTransition();
+            StartFramework();
+        }
+
+        public void PrepareForSceneTransition()
+        {
+            ShutdownRuntime();
+            State = BootstrapState.Idle;
+            LastError = null;
         }
 
         private IEnumerator StartupFlow()

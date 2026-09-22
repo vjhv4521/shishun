@@ -36,9 +36,28 @@ namespace Haven.Networking
                 GameLog.Warning("FishNet", "HavenNetworkSettings asset was not found; using local development defaults.", "NETWORK_DEFAULT_SETTINGS");
             }
 
+            if (settings.TransportProtocol != HavenTransportProtocol.TugboatUdp)
+                throw new InvalidOperationException($"Unsupported Haven transport protocol: {settings.TransportProtocol}.");
+
             networkManager.TransportManager.Transport.SetPort(settings.Port);
-            _service = new FishNetNetworkService(context, networkManager, settings);
+            networkManager.TransportManager.Transport.SetMaximumClients(settings.MaximumPlayers + 1);
+            var authenticator = networkManager.ServerManager.GetAuthenticator() as HavenRoomAuthenticator;
+            if (!authenticator)
+            {
+                authenticator = networkManager.GetComponent<HavenRoomAuthenticator>();
+                if (!authenticator)
+                    authenticator = networkManager.gameObject.AddComponent<HavenRoomAuthenticator>();
+                authenticator.Configure(settings);
+                networkManager.ServerManager.SetAuthenticator(authenticator);
+            }
+            else
+            {
+                authenticator.Configure(settings);
+            }
+
+            _service = new FishNetNetworkService(context, networkManager, settings, authenticator);
             context.Services.Register<INetworkService>(_service);
+            context.Services.Register<INetworkHostService>(_service);
             context.Services.Register<ILLMService>(_service);
 
             yield break;
@@ -49,6 +68,7 @@ namespace Haven.Networking
             if (_context != null)
             {
                 _context.Services.Remove<ILLMService>(false);
+                _context.Services.Remove<INetworkHostService>(false);
                 _context.Services.Remove<INetworkService>(false);
             }
             _service?.Dispose();

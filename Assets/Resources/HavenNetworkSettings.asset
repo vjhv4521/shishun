@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1a2adeed27ebe4478f85747e770fa80, type: 3}
   m_Name: HavenNetworkSettings
   m_EditorClassIdentifier: Haven.Network.FishNet::Haven.Networking.HavenNetworkSettings
+  transportProtocol: 0
   defaultHost: 127.0.0.1
   port: 7770
   maximumPlayers: 4
@@ -19,6 +20,9 @@ MonoBehaviour:
   connectTimeoutSeconds: 10
   inputSendInterval: 0.05
   playerMoveSpeed: 4
+  menuSceneName: MainMenu
+  singlePlayerSceneName: WorldGenMap
+  multiplayerSceneName: FrameworkDemo
   gatewayBaseUrl: http://127.0.0.1:5080
   gatewayTokenEnvironmentVariable: HAVEN_GATEWAY_TOKEN
   gatewayTimeoutSeconds: 20

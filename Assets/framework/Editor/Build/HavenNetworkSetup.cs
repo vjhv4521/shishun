@@ -31,6 +31,7 @@ namespace Haven.Framework.Editor
             EnsureFolder("Assets/Resources");
 
             var settings = EnsureNetworkSettings();
+            EditorUtility.SetDirty(settings);
             var player = EnsurePlayerPrefab();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
@@ -132,7 +133,9 @@ namespace Haven.Framework.Editor
             manager.SpawnablePrefabs = AssetDatabase.LoadAssetAtPath<DefaultPrefabObjects>(DefaultPrefabsPath);
             var transport = managerObject.AddComponent<Tugboat>();
             transport.SetPort(settings.Port);
-            transport.SetMaximumClients(settings.MaximumPlayers);
+            transport.SetMaximumClients(settings.MaximumPlayers + 1);
+            var authenticator = managerObject.AddComponent<HavenRoomAuthenticator>();
+            authenticator.Configure(settings);
             var spawner = managerObject.AddComponent<PlayerSpawner>();
             spawner.SetPlayerPrefab(player.GetComponent<NetworkObject>());
             managerObject.AddComponent<FishNetRuntimeInstaller>().Configure(manager, settings);
@@ -175,7 +178,9 @@ namespace Haven.Framework.Editor
         {
             var scenes = EditorBuildSettings.scenes.ToList();
             scenes.RemoveAll(item => item.path == ScenePath);
-            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+            var mainMenuIndex = scenes.FindIndex(item => item.path == "Assets/Scenes/MainMenu.unity");
+            var insertionIndex = mainMenuIndex >= 0 ? Mathf.Min(mainMenuIndex + 2, scenes.Count) : 0;
+            scenes.Insert(insertionIndex, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 

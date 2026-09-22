@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Haven.Framework.Scenes;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,12 +12,12 @@ namespace SurvivalEngine
     {
         public static void RestartLevel()
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneTransitionService.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public static void GoTo(string scene)
         {
-            SceneManager.LoadScene(scene);
+            SceneTransitionService.LoadScene(scene);
         }
 
         public static string GetCurrentScene()

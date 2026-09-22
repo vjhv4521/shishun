@@ -6,11 +6,54 @@ namespace Haven.Framework.Services
 {
     public enum NetworkState
     {
-        Disconnected,
+        Idle,
+        Starting,
         Connecting,
         Connected,
-        Disconnecting,
-        Failed
+        Failed,
+        Disconnected
+    }
+
+    public sealed class NetworkStateMachine
+    {
+        public NetworkState State { get; private set; } = NetworkState.Idle;
+
+        public bool TryTransition(NetworkState next)
+        {
+            if (!CanTransition(State, next))
+                return false;
+            State = next;
+            return true;
+        }
+
+        public void Reset(NetworkState state = NetworkState.Idle)
+        {
+            State = state;
+        }
+
+        public static bool CanTransition(NetworkState current, NetworkState next)
+        {
+            if (current == next)
+                return false;
+
+            switch (current)
+            {
+                case NetworkState.Idle:
+                    return next == NetworkState.Starting || next == NetworkState.Disconnected;
+                case NetworkState.Starting:
+                    return next == NetworkState.Connecting || next == NetworkState.Failed || next == NetworkState.Disconnected;
+                case NetworkState.Connecting:
+                    return next == NetworkState.Connected || next == NetworkState.Failed || next == NetworkState.Disconnected;
+                case NetworkState.Connected:
+                    return next == NetworkState.Failed || next == NetworkState.Disconnected;
+                case NetworkState.Failed:
+                    return next == NetworkState.Starting || next == NetworkState.Disconnected || next == NetworkState.Idle;
+                case NetworkState.Disconnected:
+                    return next == NetworkState.Starting || next == NetworkState.Idle;
+                default:
+                    return false;
+            }
+        }
     }
 
     [Serializable]
@@ -28,6 +71,41 @@ namespace Haven.Framework.Services
         public override string ToString()
         {
             return $"{Host}:{Port}";
+        }
+
+        public static bool TryParse(string value, ushort defaultPort, out NetworkEndpoint endpoint)
+        {
+            endpoint = default;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            var normalized = value.Trim();
+            if (normalized.Contains("://", StringComparison.Ordinal) ||
+                normalized.IndexOfAny(new[] { '/', '\\', ' ', '\t', '\r', '\n' }) >= 0)
+                return false;
+
+            var host = normalized;
+            var port = defaultPort == 0 ? (ushort)7770 : defaultPort;
+            var separator = normalized.LastIndexOf(':');
+            if (separator >= 0)
+            {
+                host = normalized.Substring(0, separator);
+                var portText = normalized.Substring(separator + 1);
+                if (string.IsNullOrWhiteSpace(host) || !ushort.TryParse(portText, out port) || port == 0)
+                    return false;
+            }
+
+            if (host.Length > 253 || host.StartsWith(".", StringComparison.Ordinal) || host.EndsWith(".", StringComparison.Ordinal))
+                return false;
+            for (var index = 0; index < host.Length; index++)
+            {
+                var character = host[index];
+                if (!char.IsLetterOrDigit(character) && character != '.' && character != '-')
+                    return false;
+            }
+
+            endpoint = new NetworkEndpoint(host, port);
+            return true;
         }
     }
 
@@ -60,8 +138,19 @@ namespace Haven.Framework.Services
         NetworkState State { get; }
         bool IsConnected { get; }
         int ConnectedPeerCount { get; }
+        NetworkEndpoint ConnectedEndpoint { get; }
+        FrameworkError LastError { get; }
         IEnumerator Connect(NetworkEndpoint endpoint, Action<FrameworkResult> completed);
         void Disconnect();
+    }
+
+    public interface INetworkHostService
+    {
+        bool IsHosting { get; }
+        NetworkEndpoint ShareEndpoint { get; }
+        int MaximumPlayers { get; }
+        IEnumerator StartHost(NetworkEndpoint endpoint, Action<FrameworkResult> completed);
+        void StopHost();
     }
 
     public enum AiQuestSource

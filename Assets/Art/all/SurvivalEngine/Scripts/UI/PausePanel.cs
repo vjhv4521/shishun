@@ -1,5 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using Haven.Framework.Bootstrap;
+using Haven.Framework.Scenes;
+using Haven.Networking;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -61,7 +64,22 @@ namespace SurvivalEngine
 
         public void OnClickQuit()
         {
-            Application.Quit();
+            var settings = Resources.Load<HavenNetworkSettings>(HavenNetworkSettings.DefaultResourceName);
+            var menuScene = settings != null ? settings.MenuSceneName : "MainMenu";
+            if (!Application.CanStreamedLevelBeLoaded(menuScene))
+            {
+                Debug.LogError($"[Haven] Main menu scene is not available in Build Settings: {menuScene}");
+                return;
+            }
+
+            var game = TheGame.Get();
+            if (game != null)
+                game.Unpause();
+
+            GameBootstrap.Instance?.PrepareForSceneTransition();
+            var transition = SceneTransitionService.LoadScene(menuScene);
+            if (!transition.Succeeded && transition.IsDone)
+                Debug.LogError($"[Haven] Could not return to the main menu: {transition.Error}");
         }
 
         private IEnumerator LoadRoutine()
