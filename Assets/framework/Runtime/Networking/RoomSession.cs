@@ -55,8 +55,8 @@ namespace Haven.Networking
         {
             if (Contains(memberId))
                 return Failure<RoomSnapshot>(RoomErrorCodes.AlreadyJoined, "该连接已经在房间中。");
-            if (Phase != RoomPhase.Lobby)
-                return Failure<RoomSnapshot>(RoomErrorCodes.InProgress, "房间已经开始游戏，暂时无法加入。");
+            if (Phase == RoomPhase.Loading)
+                return Failure<RoomSnapshot>(RoomErrorCodes.InProgress, "房间正在加载场景，请稍后加入。");
             if (_members.Count >= MaximumPlayers)
                 return Failure<RoomSnapshot>(RoomErrorCodes.Full, "房间已满。");
             if (!TryNormalizeName(displayName, out var normalized))
@@ -69,7 +69,7 @@ namespace Haven.Networking
                 Id = memberId,
                 Name = normalized,
                 IsHost = false,
-                IsReady = false,
+                IsReady = Phase == RoomPhase.InGame,
                 JoinOrder = _nextJoinOrder++
             });
             return FrameworkResult<RoomSnapshot>.Success(SnapshotFor(memberId));

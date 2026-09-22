@@ -34,6 +34,18 @@ namespace Haven.Framework.Editor
                 ClientContentMode.None);
         }
 
+        [MenuItem("Haven/Build/Windows Headless Server (module fallback)")]
+        public static void BuildWindowsHeadlessServer()
+        {
+            PrepareScene();
+            BuildWindows(
+                "Build/WindowsServerFallback/HavenServer.exe",
+                StandaloneBuildSubtarget.Player,
+                ScriptingImplementation.Mono2x,
+                BuildOptions.Development,
+                ClientContentMode.None);
+        }
+
         [MenuItem("Haven/Build/Windows Client Offline (HybridCLR)")]
         public static void BuildWindowsOfflineClient()
         {
@@ -75,6 +87,7 @@ namespace Haven.Framework.Editor
 
         // Entry points for -executeMethod batch mode.
         public static void BuildWindowsDedicatedServerBatch() => BuildWindowsDedicatedServer();
+        public static void BuildWindowsHeadlessServerBatch() => BuildWindowsHeadlessServer();
         public static void BuildWindowsClientBatch() => BuildWindowsOfflineClient();
         public static void BuildWindowsHostedClientBatch() => BuildWindowsHostedClient();
 
@@ -153,7 +166,9 @@ namespace Haven.Framework.Editor
                     serializedHotUpdateSettings.ApplyModifiedPropertiesWithoutUndo();
                     AssetDatabase.SaveAssets();
                 }
-                var scenes = EditorBuildSettings.scenes.Where(item => item.enabled).Select(item => item.path).ToArray();
+                var scenes = clientMode == ClientContentMode.None
+                    ? new[] { HavenNetworkSetup.ScenePath, HavenNetworkSetup.WorldScenePath }
+                    : EditorBuildSettings.scenes.Where(item => item.enabled).Select(item => item.path).ToArray();
                 if (scenes.Length == 0)
                     throw new InvalidOperationException("No enabled build scenes were found.");
 
@@ -166,6 +181,9 @@ namespace Haven.Framework.Editor
                     target = BuildTarget.StandaloneWindows64,
                     targetGroup = BuildTargetGroup.Standalone,
                     subtarget = (int)subtarget,
+                    extraScriptingDefines = clientMode == ClientContentMode.None && subtarget == StandaloneBuildSubtarget.Player
+                        ? new[] { "HAVEN_SERVER_BUILD" }
+                        : Array.Empty<string>(),
                     options = options
                 });
 

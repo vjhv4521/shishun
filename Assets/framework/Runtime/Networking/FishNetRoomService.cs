@@ -29,6 +29,7 @@ namespace Haven.Networking
         private readonly NetworkObject _playerPrefab;
         private readonly Dictionary<string, PendingRequest> _pendingRequests = new Dictionary<string, PendingRequest>();
         private readonly HashSet<int> _pendingSceneMembers = new HashSet<int>();
+        private readonly HashSet<int> _lateJoiningMembers = new HashSet<int>();
         private RoomSession _session;
         private Coroutine _loadTimeoutRoutine;
         private bool _disposed;
@@ -122,7 +123,20 @@ namespace Haven.Networking
             FailAllPending(RoomErrorCodes.NotConnected, "房间服务已停止。");
             SetCurrent(RoomSnapshot.Empty);
             _pendingSceneMembers.Clear();
+            _lateJoiningMembers.Clear();
             _session = null;
+        }
+
+        internal bool IsInGameMember(int clientId)
+        {
+            return _session != null && _session.Phase == RoomPhase.InGame && _session.Contains(clientId);
+        }
+
+        internal int[] InGameMemberIds()
+        {
+            return _session != null && _session.Phase == RoomPhase.InGame
+                ? _session.MemberIds()
+                : Array.Empty<int>();
         }
 
         private IEnumerator SendRequest(RoomCommandBroadcast command, Action<FrameworkResult<RoomSnapshot>> completed)
@@ -213,7 +227,34 @@ namespace Haven.Networking
                 return;
             }
 
-            HandleMutation(connection, command.RequestId, _session.Join(connection.ClientId, command.DisplayName));
+            var joiningInGame = _session.Phase == RoomPhase.InGame;
+            if (joiningInGame && (connection.FirstObject == null || !connection.FirstObject.IsSpawned))
+            {
+                SendFailure(connection, command.RequestId, RoomErrorCodes.LoadFailed, "玩家对象尚未就绪，请稍后重试。");
+                return;
+            }
+
+            var result = _session.Join(connection.ClientId, command.DisplayName);
+            if (!result.Succeeded)
+            {
+                SendFailure(connection, command.RequestId, result.Error.Code, result.Error.Message);
+                return;
+            }
+
+            SendSuccess(connection, command.RequestId, result.Value);
+            BroadcastSnapshots();
+            if (!joiningInGame)
+                return;
+
+            _lateJoiningMembers.Add(connection.ClientId);
+            var loadData = new SceneLoadData(GameSceneName)
+            {
+                MovedNetworkObjects = new[] { connection.FirstObject },
+                ReplaceScenes = ReplaceOption.None,
+                PreferredActiveScene = new PreferredScene(new SceneLookupData(GameSceneName)),
+                Options = new LoadOptions { AutomaticallyUnload = true }
+            };
+            _manager.SceneManager.LoadConnectionScenes(new[] { connection }, loadData);
         }
 
         private void HandleMutation(NetworkConnection connection, string requestId, FrameworkResult<RoomSnapshot>? result)
@@ -286,6 +327,7 @@ namespace Haven.Networking
 
             var previousPhase = _session.Phase;
             _session.Remove(connection.ClientId);
+            _lateJoiningMembers.Remove(connection.ClientId);
             SendSuccess(connection, requestId, RoomSnapshot.Empty);
 
             if (previousPhase == RoomPhase.Loading)
@@ -312,6 +354,7 @@ namespace Haven.Networking
             var wasLoading = _session.Phase == RoomPhase.Loading;
             _session.Remove(connection.ClientId);
             _pendingSceneMembers.Remove(connection.ClientId);
+            _lateJoiningMembers.Remove(connection.ClientId);
             if (_session.IsEmpty)
             {
                 StopLoadTimeout();
@@ -338,18 +381,22 @@ namespace Haven.Networking
 
         private void OnClientPresenceChangeEnd(ClientPresenceChangeEventArgs args)
         {
-            if (!args.Added || args.Scene.name != GameSceneName || _session == null || _session.Phase != RoomPhase.Loading)
+            if (!args.Added || args.Scene.name != GameSceneName || _session == null)
+                return;
+            if (_session.Phase == RoomPhase.InGame)
+            {
+                if (!_lateJoiningMembers.Remove(args.Connection.ClientId))
+                    return;
+                PlacePlayer(args.Connection);
+                BroadcastSnapshots();
+                return;
+            }
+            if (_session.Phase != RoomPhase.Loading)
                 return;
             if (!_pendingSceneMembers.Remove(args.Connection.ClientId))
                 return;
 
-            var player = args.Connection.FirstObject;
-            if (player)
-            {
-                var index = Math.Max(0, Array.IndexOf(_session.MemberIds(), args.Connection.ClientId));
-                var angle = index * Mathf.PI * 2f / Math.Max(1, _session.Count);
-                player.transform.SetPositionAndRotation(new Vector3(Mathf.Cos(angle) * 2f, 1f, Mathf.Sin(angle) * 2f), Quaternion.identity);
-            }
+            PlacePlayer(args.Connection);
 
             var loaded = _session.Count - _pendingSceneMembers.Count;
             BroadcastLoadProgress((float)loaded / _session.Count, $"已进入世界：{loaded}/{_session.Count}");
@@ -359,6 +406,18 @@ namespace Haven.Networking
             StopLoadTimeout();
             _session.CompleteLoading();
             BroadcastSnapshots();
+        }
+
+        private void PlacePlayer(NetworkConnection connection)
+        {
+            var player = connection.FirstObject;
+            if (!player || _session == null)
+                return;
+            var index = Math.Max(0, Array.IndexOf(_session.MemberIds(), connection.ClientId));
+            var angle = index * Mathf.PI * 2f / Math.Max(1, _session.Count);
+            player.transform.SetPositionAndRotation(
+                new Vector3(Mathf.Cos(angle) * 2f, 1f, Mathf.Sin(angle) * 2f),
+                Quaternion.identity);
         }
 
         private void OnSceneLoadPercentChange(SceneLoadPercentEventArgs args)

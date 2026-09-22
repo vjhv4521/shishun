@@ -66,8 +66,8 @@ namespace Haven.Framework.Editor
                 throw new InvalidOperationException("FrameworkDemo scene is not enabled in build settings.");
             if (!EditorBuildSettings.scenes.Any(item => item.enabled && item.path == WorldScenePath))
                 throw new InvalidOperationException("WorldGenMap scene is not enabled in build settings.");
-            if (settings.ProtocolVersion != 2)
-                throw new InvalidOperationException("Room protocol version must be 2.");
+            if (settings.ProtocolVersion != 3)
+                throw new InvalidOperationException("Room protocol version must be 3.");
             if (settings.MaximumConnections <= settings.MaximumPlayers)
                 throw new InvalidOperationException("Transport capacity must exceed room capacity so full-room errors can be returned.");
 

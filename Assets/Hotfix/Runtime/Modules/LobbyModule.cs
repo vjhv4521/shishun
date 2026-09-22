@@ -17,7 +17,7 @@ namespace Haven.Hotfix.Modules
 
         protected override IEnumerator OnInitialize()
         {
-#if UNITY_SERVER && !UNITY_EDITOR
+#if (UNITY_SERVER || HAVEN_SERVER_BUILD) && !UNITY_EDITOR
             yield break;
 #else
             var view = Object.FindAnyObjectByType<HavenDemoHud>();

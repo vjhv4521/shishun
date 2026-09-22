@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Haven.Framework.Bootstrap;
 using Haven.Framework.Core;
 using Haven.Framework.HotUpdate;
@@ -28,6 +29,14 @@ namespace Haven.Framework.Demo
         private Sprite _hotUpdateBadge;
         private string _hotUpdateAnnouncement = string.Empty;
         private string _hotUpdateContentVersion = string.Empty;
+        private ICoopGameplayService _gameplayService;
+        private IDisposable _gameplaySubscription;
+        private GameplaySnapshot _gameplay = GameplaySnapshot.Empty;
+        private string _gameplayStatus = "正在等待服务端状态…";
+        private bool _gameplayBusy;
+        private bool _gameplayRefreshRequested;
+        private long _visualRevision = -1;
+        private readonly Dictionary<string, GameObject> _gameplayVisuals = new Dictionary<string, GameObject>();
 
         public event Action ConnectRequested;
         public event Action DisconnectRequested;
@@ -65,6 +74,12 @@ namespace Haven.Framework.Demo
             _room = snapshot;
             if (snapshot.HasRoom)
                 roomCode = snapshot.RoomCode;
+            if (snapshot.Phase != RoomPhase.InGame)
+            {
+                _gameplay = GameplaySnapshot.Empty;
+                _gameplayRefreshRequested = false;
+                ClearGameplayVisuals();
+            }
         }
 
         public void SetBusy(bool value)
@@ -100,16 +115,26 @@ namespace Haven.Framework.Demo
         private void Update()
         {
             ObserveBootstrap(GameBootstrap.Instance);
+            EnsureGameplayBinding();
+            if (_room.Phase == RoomPhase.InGame && _gameplayService != null &&
+                !_gameplay.HasState && !_gameplayBusy && !_gameplayRefreshRequested)
+            {
+                _gameplayRefreshRequested = true;
+                RunGameplayRequest(callback => _gameplayService.Refresh(callback), "世界状态已同步。");
+            }
+            SyncGameplayVisuals();
         }
 
         private void OnDisable()
         {
             ObserveBootstrap(null);
+            UnbindGameplay();
+            ClearGameplayVisuals();
         }
 
         private void OnGUI()
         {
-#if UNITY_SERVER && !UNITY_EDITOR
+#if (UNITY_SERVER || HAVEN_SERVER_BUILD) && !UNITY_EDITOR
             return;
 #endif
             ObserveBootstrap(GameBootstrap.Instance);
@@ -122,6 +147,7 @@ namespace Haven.Framework.Demo
             if (_room.Phase == RoomPhase.InGame)
             {
                 DrawInGamePanel();
+                DrawGameplayPanel();
                 return;
             }
 
@@ -161,6 +187,38 @@ namespace Haven.Framework.Demo
                 return;
             _observedBootstrap.ProgressChanged += OnHotUpdateProgress;
             OnHotUpdateProgress(_observedBootstrap.LastProgress);
+        }
+
+        private void EnsureGameplayBinding()
+        {
+            var context = GameBootstrap.Instance?.Context;
+            if (context == null || !context.Services.TryResolve<ICoopGameplayService>(out var service))
+            {
+                if (_gameplayService != null)
+                    UnbindGameplay();
+                return;
+            }
+            if (ReferenceEquals(_gameplayService, service))
+                return;
+            UnbindGameplay();
+            _gameplayService = service;
+            _gameplay = service.Current;
+            _gameplaySubscription = context.Events.Subscribe<GameplaySnapshotChanged>(OnGameplaySnapshotChanged);
+        }
+
+        private void UnbindGameplay()
+        {
+            _gameplaySubscription?.Dispose();
+            _gameplaySubscription = null;
+            _gameplayService = null;
+            _gameplayBusy = false;
+            _gameplayRefreshRequested = false;
+            _gameplay = GameplaySnapshot.Empty;
+        }
+
+        private void OnGameplaySnapshotChanged(GameplaySnapshotChanged changed)
+        {
+            _gameplay = changed.Snapshot;
         }
 
         private void OnHotUpdateProgress(HotUpdateProgress progress)
@@ -376,6 +434,233 @@ namespace Haven.Framework.Demo
                 LeaveRequested?.Invoke();
             GUI.enabled = true;
             GUILayout.EndArea();
+        }
+
+        private void DrawGameplayPanel()
+        {
+            var width = 410f;
+            GUILayout.BeginArea(new Rect(Mathf.Max(340f, Screen.width - width - 16f), 16f, width, 650f),
+                "WP4 服务端权威玩法", GUI.skin.box);
+
+            if (!_gameplay.TryGetLocalPlayer(out var player))
+            {
+                GUILayout.Label("正在等待服务端发送完整世界快照…");
+                GUILayout.TextArea(_gameplayStatus, GUILayout.MinHeight(45f));
+                GUILayout.EndArea();
+                return;
+            }
+
+            GUILayout.Label($"同步版本：{_gameplay.Revision}　玩家：{player.PlayerId}");
+            GUILayout.Label($"背包　木材 {Quantity(player, GameplayItemIds.Wood)}　石材 {Quantity(player, GameplayItemIds.Stone)}　斧头 {Quantity(player, GameplayItemIds.Axe)}　金币 {Quantity(player, GameplayItemIds.Coin)}");
+            var quest = player.Quest;
+            GUILayout.Space(4f);
+            GUILayout.Label("个人探索记录");
+            GUILayout.Label($"采集木材 {quest.CollectedWood}　建造火堆 {quest.BuiltCampfires}　击败敌人 {quest.DefeatedEnemies}");
+            var shared = _gameplay.SharedQuest;
+            GUILayout.Label($"共享委托：木材 {shared.WoodContributed}/{shared.WoodRequired}　石材 {shared.StoneContributed}/{shared.StoneRequired}　贡献者 {shared.ContributorCount}/{shared.RequiredContributors}");
+            GUILayout.Label(shared.Dialogue ?? string.Empty);
+            GUI.enabled = !_gameplayBusy && shared.IsComplete && !shared.LocalRewardClaimed;
+            if (GUILayout.Button(shared.LocalRewardClaimed ? "奖励已领取" : "领取共享奖励（每人 10 金币）"))
+                RunGameplayRequest(callback => _gameplayService.ClaimQuestReward(callback), "任务奖励领取成功。");
+            GUI.enabled = true;
+            GUILayout.BeginHorizontal();
+            GUI.enabled = !_gameplayBusy && Quantity(player, GameplayItemIds.Wood) > 0;
+            if (GUILayout.Button("贡献 1 木"))
+                RunGameplayRequest(callback => _gameplayService.Contribute(GameplayItemIds.Wood, 1, callback), "已贡献木材。");
+            GUI.enabled = !_gameplayBusy && Quantity(player, GameplayItemIds.Stone) > 0;
+            if (GUILayout.Button("贡献 1 石"))
+                RunGameplayRequest(callback => _gameplayService.Contribute(GameplayItemIds.Stone, 1, callback), "已贡献石材。");
+            GUI.enabled = true;
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(6f);
+            GUILayout.Label("资源（靠近至 3.25 米后采集）");
+            foreach (var node in _gameplay.ResourceNodes ?? Array.Empty<GameplayResourceNodeSnapshot>())
+            {
+                GUILayout.BeginHorizontal();
+                var distance = HorizontalDistance(player.Position, node.Position);
+                var state = node.Remaining > 0 ? $"{node.Remaining}/{node.Capacity}" : $"刷新 {node.RespawnRemainingSeconds:0.0}s";
+                GUILayout.Label($"{node.ItemId}　{state}　{distance:0.0}m", GUILayout.Width(280f));
+                GUI.enabled = !_gameplayBusy && node.Remaining > 0 && distance <= 3.25f;
+                if (GUILayout.Button("采集", GUILayout.Width(80f)))
+                {
+                    var nodeId = node.NodeId;
+                    RunGameplayRequest(callback => _gameplayService.Collect(nodeId, callback), $"已采集 {node.ItemId}。");
+                }
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Space(6f);
+            GUILayout.Label("建造（服务端扣除材料并校验位置）");
+            GUI.enabled = !_gameplayBusy;
+            if (GUILayout.Button("制作斧头（2 木 + 1 石）"))
+                RunGameplayRequest(callback => _gameplayService.CraftAxe(callback), "斧头制作成功。");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("篝火（2 木 + 1 石）"))
+            {
+                var position = player.Position + new Vector3(2f, 0f, 0f);
+                RunGameplayRequest(callback => _gameplayService.Build(GameplayBuildingTypes.Firepit, position, 0f, callback), "火堆建造成功。");
+            }
+            if (GUILayout.Button("木墙（3 木）"))
+            {
+                var position = player.Position + new Vector3(0f, 0f, 2f);
+                RunGameplayRequest(callback => _gameplayService.Build(GameplayBuildingTypes.WallWood, position, 0f, callback), "木墙建造成功。");
+            }
+            GUILayout.EndHorizontal();
+            GUI.enabled = true;
+            GUILayout.Label($"当前建筑：{(_gameplay.Buildings?.Length ?? 0)}");
+
+            GUILayout.Space(6f);
+            GUILayout.Label("敌人（靠近至 3.5 米后攻击）");
+            foreach (var enemy in _gameplay.Enemies ?? Array.Empty<GameplayEnemySnapshot>())
+            {
+                GUILayout.BeginHorizontal();
+                var distance = HorizontalDistance(player.Position, enemy.Position);
+                var state = enemy.IsAlive ? $"生命 {enemy.Health}/{enemy.MaximumHealth}" : $"复活 {enemy.RespawnRemainingSeconds:0.0}s";
+                GUILayout.Label($"{enemy.EnemyId}　{state}　{distance:0.0}m", GUILayout.Width(280f));
+                GUI.enabled = !_gameplayBusy && enemy.IsAlive && distance <= 3.5f;
+                if (GUILayout.Button("攻击", GUILayout.Width(80f)))
+                {
+                    var enemyId = enemy.EnemyId;
+                    RunGameplayRequest(callback => _gameplayService.Attack(enemyId, callback), "攻击已由服务端结算。");
+                }
+                GUI.enabled = true;
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Space(8f);
+            GUI.enabled = !_gameplayBusy;
+            if (GUILayout.Button("刷新完整状态"))
+                RunGameplayRequest(callback => _gameplayService.Refresh(callback), "世界状态已刷新。");
+            GUI.enabled = true;
+            GUILayout.TextArea(_gameplayStatus, GUILayout.MinHeight(48f));
+            GUILayout.EndArea();
+        }
+
+        private void RunGameplayRequest(
+            Func<Action<FrameworkResult<GameplaySnapshot>>, IEnumerator> requestFactory,
+            string successMessage)
+        {
+            if (_gameplayBusy || _gameplayService == null)
+                return;
+            _gameplayBusy = true;
+            StartCoroutine(requestFactory(result =>
+            {
+                _gameplayBusy = false;
+                if (result.Succeeded)
+                {
+                    _gameplay = result.Value;
+                    _gameplayStatus = successMessage;
+                }
+                else
+                {
+                    _gameplayStatus = $"{result.Error.Message}\n错误码：{result.Error.Code}";
+                }
+            }));
+        }
+
+        private void SyncGameplayVisuals()
+        {
+            if (_room.Phase != RoomPhase.InGame || !_gameplay.HasState)
+            {
+                ClearGameplayVisuals();
+                return;
+            }
+            if (_visualRevision == _gameplay.Revision)
+                return;
+            _visualRevision = _gameplay.Revision;
+            var activeKeys = new HashSet<string>();
+
+            foreach (var node in _gameplay.ResourceNodes ?? Array.Empty<GameplayResourceNodeSnapshot>())
+            {
+                var key = "resource:" + node.NodeId;
+                activeKeys.Add(key);
+                var marker = GetOrCreateMarker(key, PrimitiveType.Sphere,
+                    node.ItemId == GameplayItemIds.Wood ? new Color(0.48f, 0.28f, 0.1f) : Color.gray);
+                marker.transform.position = node.Position;
+                marker.transform.localScale = Vector3.one * 1.1f;
+                marker.SetActive(node.Remaining > 0);
+            }
+            foreach (var building in _gameplay.Buildings ?? Array.Empty<GameplayBuildingSnapshot>())
+            {
+                var key = "building:" + building.BuildingId;
+                activeKeys.Add(key);
+                var marker = GetOrCreateMarker(key,
+                    building.BuildingType == GameplayBuildingTypes.Firepit ? PrimitiveType.Cylinder : PrimitiveType.Cube,
+                    building.BuildingType == GameplayBuildingTypes.Firepit ? new Color(1f, 0.35f, 0.05f) : new Color(0.35f, 0.18f, 0.06f));
+                marker.transform.SetPositionAndRotation(building.Position, Quaternion.Euler(0f, building.Yaw, 0f));
+                marker.transform.localScale = building.BuildingType == GameplayBuildingTypes.Firepit
+                    ? new Vector3(1.1f, 0.25f, 1.1f)
+                    : new Vector3(2.5f, 1.5f, 0.3f);
+                marker.SetActive(true);
+            }
+            foreach (var enemy in _gameplay.Enemies ?? Array.Empty<GameplayEnemySnapshot>())
+            {
+                var key = "enemy:" + enemy.EnemyId;
+                activeKeys.Add(key);
+                var marker = GetOrCreateMarker(key, PrimitiveType.Capsule, new Color(0.65f, 0.08f, 0.08f));
+                marker.transform.position = enemy.Position;
+                marker.transform.localScale = new Vector3(0.8f, 1.2f, 0.8f);
+                marker.SetActive(enemy.IsAlive);
+            }
+
+            var stale = new List<string>();
+            foreach (var pair in _gameplayVisuals)
+            {
+                if (!activeKeys.Contains(pair.Key))
+                    stale.Add(pair.Key);
+            }
+            foreach (var key in stale)
+            {
+                if (_gameplayVisuals[key])
+                    Destroy(_gameplayVisuals[key]);
+                _gameplayVisuals.Remove(key);
+            }
+        }
+
+        private GameObject GetOrCreateMarker(string key, PrimitiveType type, Color color)
+        {
+            if (_gameplayVisuals.TryGetValue(key, out var existing) && existing)
+                return existing;
+            var marker = GameObject.CreatePrimitive(type);
+            marker.name = "[WP4] " + key;
+            var collider = marker.GetComponent<Collider>();
+            if (collider)
+                Destroy(collider);
+            var renderer = marker.GetComponent<Renderer>();
+            if (renderer)
+                renderer.material.color = color;
+            _gameplayVisuals[key] = marker;
+            return marker;
+        }
+
+        private void ClearGameplayVisuals()
+        {
+            foreach (var marker in _gameplayVisuals.Values)
+            {
+                if (marker)
+                    Destroy(marker);
+            }
+            _gameplayVisuals.Clear();
+            _visualRevision = -1;
+        }
+
+        private static int Quantity(GameplayPlayerSnapshot player, string itemId)
+        {
+            foreach (var item in player.Inventory ?? Array.Empty<GameplayInventoryItemSnapshot>())
+            {
+                if (string.Equals(item.ItemId, itemId, StringComparison.Ordinal))
+                    return item.Quantity;
+            }
+            return 0;
+        }
+
+        private static float HorizontalDistance(Vector3 left, Vector3 right)
+        {
+            left.y = 0f;
+            right.y = 0f;
+            return Vector3.Distance(left, right);
         }
     }
 }

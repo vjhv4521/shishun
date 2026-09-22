@@ -17,7 +17,7 @@ MonoBehaviour:
   autoStart: 1
   primaryHost: http://127.0.0.1:5080/patches
   fallbackHost: http://127.0.0.1:5080/patches
-  appVersion: 0.1.0
+  appVersion: 0.2.0
   appendPlatformAndVersion: 1
   requestTimeoutSeconds: 60
   workflowRetryCount: 2

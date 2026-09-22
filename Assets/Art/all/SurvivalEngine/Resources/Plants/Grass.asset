@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d016e04ccb58e33469bedc8e02168847, type: 3}
   m_Name: Grass
   m_EditorClassIdentifier: 
-  id: grass
+  id: grass_wild
   title: Grass
   icon: {fileID: 21300000, guid: 8a91f42a767ee9d48bd3b6e6047ac3ab, type: 3}
   desc: Grass

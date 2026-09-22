@@ -126,6 +126,36 @@ namespace Haven.Framework.Tests
             Assert.IsTrue(room.IsEmpty);
         }
 
+        [Test]
+        public void Join_InGameAllowsLatePlayerAndMarksReady()
+        {
+            var room = CreateRoom();
+            room.Join(20, "Guest");
+            room.SetReady(20, true);
+            room.BeginLoading(10);
+            room.CompleteLoading();
+
+            var result = room.Join(30, "LatePlayer");
+
+            Assert.IsTrue(result.Succeeded, result.Error?.ToString());
+            Assert.AreEqual(RoomPhase.InGame, result.Value.Phase);
+            Assert.IsTrue(result.Value.Members[2].IsReady);
+        }
+
+        [Test]
+        public void Join_LoadingStillRejectsPlayer()
+        {
+            var room = CreateRoom();
+            room.Join(20, "Guest");
+            room.SetReady(20, true);
+            room.BeginLoading(10);
+
+            var result = room.Join(30, "TooEarly");
+
+            Assert.IsFalse(result.Succeeded);
+            Assert.AreEqual(RoomErrorCodes.InProgress, result.Error.Code);
+        }
+
         private static RoomSession CreateRoom(int maximumPlayers = 4)
         {
             var result = RoomSession.Create("123456", maximumPlayers, 2, 10, "Host");

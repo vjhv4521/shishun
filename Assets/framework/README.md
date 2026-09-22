@@ -68,6 +68,8 @@ HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 W
 
 独立入口 `Haven/Build/Windows Camp Quest Demo` 针对 Windows Player 执行 Generate All，制作随包内容并临时使用 Offline，结束后恢复原设置。它只更新 StreamingAssets，不再切换 Hosted 补丁服务器的远端版本指针。新增契约改变 AOT 边界，必须重新完整构建，不用于旧客户端原地升级。详细说明与验收状态见 `docs/CAMP_QUESTS.md`。
 
+0.2.0 合作玩法通过 `ICoopGameplayService` 暴露稳定契约，由 `FishNetGameplayService` 在服务器维护权威状态。客户端只提交采集、制作、建造、贡献、攻击和领奖意图；服务器用玩家网络对象位置校验距离，并独立结算私人背包、建筑、敌人生命与房间共享委托。每次有效变更向房内成员广播按接收者裁剪的完整快照；晚加入玩家会单独加载至 `WorldGenMap` 并收到当前世界。请求 ID 去重、操作冷却、资源耗尽/刷新、建筑地形和碰撞校验及奖励领取标记共同防止重复结算。游戏内右侧 WP4 面板可直接验收。详细步骤见 `doc/08_联机分工计划.md` 和 `doc/08_WP4_联机玩法同步说明.md`。
+
 1. 在 `Assets/Hotfix/Runtime/Modules` 新建 `HotfixModuleBase` 子类。
 2. 通过 `Context.Services` 注册接口，通过 `Context.Events` 发布领域事件。
 3. 在 `HotfixEntry.Initialize` 中按需添加模块。`Order` 越小越先初始化，关闭时按相反顺序释放。

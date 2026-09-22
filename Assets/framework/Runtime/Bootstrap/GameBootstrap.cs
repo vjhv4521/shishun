@@ -142,7 +142,7 @@ namespace Haven.Framework.Bootstrap
                 yield break;
             }
 
-#if UNITY_SERVER && !UNITY_EDITOR
+#if (UNITY_SERVER || HAVEN_SERVER_BUILD) && !UNITY_EDITOR
             _context.ContentVersion = Application.version;
             CompleteStartup("Dedicated Server core services are ready.");
             yield break;

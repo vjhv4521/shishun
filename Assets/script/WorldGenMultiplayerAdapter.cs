@@ -72,7 +72,7 @@ namespace Haven.Gameplay
                     player.gameObject.SetActive(false);
             }
 
-#if !UNITY_SERVER
+#if !UNITY_SERVER && !HAVEN_SERVER_BUILD
             DisableLobbyCameraAndAudio();
             FishNetPlayerAvatar localAvatar = null;
             while (Time.realtimeSinceStartup < deadline && !localAvatar)
