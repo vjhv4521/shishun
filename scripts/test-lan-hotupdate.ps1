@@ -14,19 +14,19 @@ $baseUrl = "http://${ServerAddress}:$Port"
 $healthUrl = "$baseUrl/health"
 $versionUrl = "$baseUrl/patches/PC/$AppVersion/DefaultPackage.version"
 
-Write-Host "检查 TCP ${ServerAddress}:$Port ..."
+Write-Host "Checking TCP ${ServerAddress}:$Port ..."
 $connection = Test-NetConnection -ComputerName $ServerAddress -Port $Port -WarningAction SilentlyContinue
 if (-not $connection.TcpTestSucceeded) {
-    throw "无法连接 TCP ${ServerAddress}:$Port。请检查两台电脑是否在同一私人局域网、Gateway 是否运行，以及防火墙规则是否存在。"
+    throw "Cannot connect to TCP ${ServerAddress}:$Port. Confirm both computers share a private LAN, Gateway is running, and the firewall rule exists."
 }
 
-Write-Host "检查 $healthUrl ..."
+Write-Host "Checking $healthUrl ..."
 $health = Invoke-RestMethod -Uri $healthUrl -Method Get -TimeoutSec 10
 if ($health.status -ne 'ok' -or $health.patchHosting -ne $true) {
-    throw "Gateway 健康检查未通过：status=$($health.status), patchHosting=$($health.patchHosting)"
+    throw "Gateway health check failed: status=$($health.status), patchHosting=$($health.patchHosting)"
 }
 
-Write-Host "检查 $versionUrl ..."
+Write-Host "Checking $versionUrl ..."
 $response = Invoke-WebRequest -Uri $versionUrl -Method Get -TimeoutSec 10
 if ($response.Content -is [byte[]]) {
     $version = [Text.Encoding]::UTF8.GetString($response.Content).Trim()
@@ -35,7 +35,7 @@ else {
     $version = ([string]$response.Content).Trim()
 }
 if ([string]::IsNullOrWhiteSpace($version)) {
-    throw '补丁版本文件存在，但内容为空。'
+    throw 'The patch version file exists but is empty.'
 }
 
 [pscustomobject]@{

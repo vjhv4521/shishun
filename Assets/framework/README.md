@@ -46,13 +46,14 @@ Unity 完成包导入后，先在 Unity Hub 安装实际发布平台的 **Build 
 2. `Haven/Framework/2. Install HybridCLR Runtime`：安装与 Unity 6000.5 对应的本地 `il2cpp_plus`。
 3. `Haven/Framework/3. Generate All and Prepare DLL Assets`：生成热更 DLL、桥接、link.xml、AOT 元数据，并复制为 YooAsset 原生文件。
 4. `Haven/Content/1. Build Current Assets and Publish Locally`：构建 `DefaultPackage` 并发布到 ASP.NET 网关的静态目录。
-5. `Haven/Build/Windows Client (HybridCLR)`：自动执行 Generate All、制作首包资源、临时切换为 `Host` 模式并构建客户端。
+5. `Haven/Build/Windows Client Offline (HybridCLR)`：自动执行 Generate All、制作随包资源并构建不依赖补丁服务器的开发客户端。
+6. `Haven/Build/Windows Client Hosted (HybridCLR)`：正式 LAN 首包；必须显式提供 `HAVEN_CONTENT_VERSION`、`HAVEN_PATCH_BASE_URL` 和 `HAVEN_GAME_SERVER_HOST`，且服务器地址必须是同一个非回环私人 IPv4。
 
 Windows Dedicated Server 使用 `Haven/Build/Windows Dedicated Server` 单独构建。工具会临时关闭 HybridCLR；服务端规则更新需要重新构建与重启，不通过客户端下载补丁发布。
 
 HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 Windows、Android、iOS 或 WebGL 后，必须针对新目标重新执行第 3 步；Framework 中可能影响 AOT 引用的代码变更后也应重新生成。
 
-远端默认目录规则为：`{host}/{platform}/{appVersion}`，项目中提交的默认值是 `http://127.0.0.1:5080/patches/PC/0.1.0`。对合作伙伴构建客户端时，在本机设置 `HAVEN_PATCH_BASE_URL=http://<SERVER_LAN_IP>:5080/patches`；构建脚本只在本次构建中注入并于结束后恢复，避免提交局域网 IP。可在配置中关闭平台和版本后缀。
+远端默认目录规则为：`{host}/{platform}/{appVersion}`，项目中提交的默认值是 `http://127.0.0.1:5080/patches/PC/0.1.0`。Hosted 构建设置 `HAVEN_PATCH_BASE_URL=http://<SERVER_LAN_IP>:5080/patches`、`HAVEN_GAME_SERVER_HOST=<SERVER_LAN_IP>` 和显式内容版本；构建脚本只在本次构建中注入并于结束后恢复，避免提交局域网 IP。正式 LAN 发布使用 `scripts/build-lan-release.ps1`，并由 `docs/HOTUPDATE_LAN_ACCEPTANCE.md` 记录 V1/V2、故障重试和双机验收步骤。
 
 ## 开发模式
 
@@ -65,7 +66,7 @@ HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 W
 
 营地委托与管事聊天模块使用 `Runtime/CampQuests` 的稳定契约，任务与聊天会话逻辑在 `Haven.Hotfix`，旧 SurvivalEngine 适配器及本机 Gateway 客户端在默认程序集 `Assets/HavenCamp/Runtime`；Hotfix 不引用 Assembly-CSharp。聊天只返回文字，不持久化或执行物品交换。只有 `WorldGenMap` 安装适配器时才启用此模块。该场景自带非持久 GameBootstrap，支持旧菜单的场景重载；联机原型沿用原启动方式。
 
-独立入口 `Haven/Build/Windows Camp Quest Demo` 针对 Windows Player 执行 Generate All，制作随包内容并临时使用 Offline，结束后恢复原设置。新增契约改变 AOT 边界，必须重新完整构建，不用于旧客户端原地升级。详细说明与验收状态见 `docs/CAMP_QUESTS.md`。
+独立入口 `Haven/Build/Windows Camp Quest Demo` 针对 Windows Player 执行 Generate All，制作随包内容并临时使用 Offline，结束后恢复原设置。它只更新 StreamingAssets，不再切换 Hosted 补丁服务器的远端版本指针。新增契约改变 AOT 边界，必须重新完整构建，不用于旧客户端原地升级。详细说明与验收状态见 `docs/CAMP_QUESTS.md`。
 
 1. 在 `Assets/Hotfix/Runtime/Modules` 新建 `HotfixModuleBase` 子类。
 2. 通过 `Context.Services` 注册接口，通过 `Context.Events` 发布领域事件。
@@ -81,3 +82,4 @@ HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 W
 - 验证无更新、有更新、下载失败重试、旧资源回退四条路径。
 - 每次发布绑定客户端版本、资源版本、Git 标签与构建目标；不要把 API 密钥写入客户端配置或日志。
 - 内容发布会先复制并验证新文件，最后切换 `DefaultPackage.version`；旧 Manifest 与哈希命名文件保留，便于回退。不要在服务器运行期间手工清空补丁目录。
+- `start-gateway.ps1 -SimulatePatchDownloadFailure` 只用于验收：版本和 Manifest 仍可访问，资源 payload 返回 503，以稳定验证 Player 的失败和手动重试路径。

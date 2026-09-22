@@ -37,8 +37,11 @@ namespace Haven.Framework.Bootstrap
         private readonly List<IFrameworkServiceInstaller> _installedServices = new List<IFrameworkServiceInstaller>();
 
         public static GameBootstrap Instance => _instance;
+        public event Action<HotUpdateProgress> ProgressChanged;
         public BootstrapState State { get; private set; } = BootstrapState.Idle;
         public FrameworkError LastError { get; private set; }
+        public HotUpdateProgress LastProgress { get; private set; }
+        public bool CanRetry => State == BootstrapState.Failed && LastError?.Retryable == true;
         public FrameworkContext Context => _context;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -91,7 +94,7 @@ namespace Haven.Framework.Bootstrap
 
         public void Retry()
         {
-            if (State != BootstrapState.Failed)
+            if (!CanRetry)
                 return;
             ShutdownRuntime();
             State = BootstrapState.Idle;
@@ -245,6 +248,7 @@ namespace Haven.Framework.Bootstrap
             if (_instance != this)
                 return;
             ShutdownRuntime();
+            ProgressChanged = null;
             _instance = null;
         }
 
@@ -261,6 +265,22 @@ namespace Haven.Framework.Bootstrap
 
         private void Report(HotUpdateProgress progress)
         {
+            LastProgress = progress;
+            var listeners = ProgressChanged?.GetInvocationList();
+            if (listeners != null)
+            {
+                foreach (var listener in listeners)
+                {
+                    try
+                    {
+                        ((Action<HotUpdateProgress>)listener).Invoke(progress);
+                    }
+                    catch (Exception exception)
+                    {
+                        GameLog.Error(Module, "A hot-update progress listener failed.", "BOOT_PROGRESS_LISTENER_FAILED", exception, _context?.CorrelationId);
+                    }
+                }
+            }
             _events?.Publish(progress);
             if (progress.Stage != HotUpdateStage.DownloadFiles || progress.NormalizedProgress >= 1f)
                 GameLog.Info(Module, progress.Message, progress.Stage.ToString(), _context?.CorrelationId);

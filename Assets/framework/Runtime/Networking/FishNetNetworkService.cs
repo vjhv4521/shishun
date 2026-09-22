@@ -142,11 +142,6 @@ namespace Haven.Networking
 
         private void OnRemoteConnectionState(NetworkConnection connection, RemoteConnectionStateArgs args)
         {
-            if (args.ConnectionState == RemoteConnectionState.Started && _manager.ServerManager.Clients.Count > _settings.MaximumPlayers)
-            {
-                GameLog.Warning("FishNet", $"Rejected client {connection.ClientId}; player limit is {_settings.MaximumPlayers}.", "NETWORK_SERVER_FULL");
-                connection.Disconnect(true);
-            }
             _context.Events.Publish(new NetworkPeerCountChanged(ConnectedPeerCount));
         }
 

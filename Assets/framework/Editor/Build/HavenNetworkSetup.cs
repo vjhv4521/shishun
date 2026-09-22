@@ -18,6 +18,7 @@ namespace Haven.Framework.Editor
     public static class HavenNetworkSetup
     {
         public const string ScenePath = "Assets/Scenes/FrameworkDemo.unity";
+        public const string WorldScenePath = "Assets/Scenes/WorldGenMap.unity";
         public const string PlayerPrefabPath = "Assets/Prefabs/Network/HavenPlayer.prefab";
         public const string NetworkSettingsPath = "Assets/Resources/HavenNetworkSettings.asset";
         private const string DefaultPrefabsPath = "Assets/DefaultPrefabObjects.asset";
@@ -49,9 +50,10 @@ namespace Haven.Framework.Editor
             var settings = AssetDatabase.LoadAssetAtPath<HavenNetworkSettings>(NetworkSettingsPath);
             var player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             var scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
+            var worldScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(WorldScenePath);
             var prefabs = AssetDatabase.LoadAssetAtPath<DefaultPrefabObjects>(DefaultPrefabsPath);
 
-            if (!settings || !player || !scene || !prefabs)
+            if (!settings || !player || !scene || !worldScene || !prefabs)
                 throw new InvalidOperationException("Haven network demo is incomplete. Run Haven/Network/1. Create or Refresh Demo.");
             if (!player.TryGetComponent<NetworkObject>(out var networkObject) ||
                 !player.TryGetComponent<FishNetPlayerAvatar>(out _) ||
@@ -61,6 +63,12 @@ namespace Haven.Framework.Editor
                 throw new InvalidOperationException("HavenPlayer is not registered in FishNet DefaultPrefabObjects.");
             if (!EditorBuildSettings.scenes.Any(item => item.enabled && item.path == ScenePath))
                 throw new InvalidOperationException("FrameworkDemo scene is not enabled in build settings.");
+            if (!EditorBuildSettings.scenes.Any(item => item.enabled && item.path == WorldScenePath))
+                throw new InvalidOperationException("WorldGenMap scene is not enabled in build settings.");
+            if (settings.ProtocolVersion != 2)
+                throw new InvalidOperationException("Room protocol version must be 2.");
+            if (settings.MaximumConnections <= settings.MaximumPlayers)
+                throw new InvalidOperationException("Transport capacity must exceed room capacity so full-room errors can be returned.");
 
             Debug.Log("[Haven] FishNet demo validation passed.");
         }
@@ -132,10 +140,10 @@ namespace Haven.Framework.Editor
             manager.SpawnablePrefabs = AssetDatabase.LoadAssetAtPath<DefaultPrefabObjects>(DefaultPrefabsPath);
             var transport = managerObject.AddComponent<Tugboat>();
             transport.SetPort(settings.Port);
-            transport.SetMaximumClients(settings.MaximumPlayers);
+            transport.SetMaximumClients(settings.MaximumConnections);
             var spawner = managerObject.AddComponent<PlayerSpawner>();
             spawner.SetPlayerPrefab(player.GetComponent<NetworkObject>());
-            managerObject.AddComponent<FishNetRuntimeInstaller>().Configure(manager, settings);
+            managerObject.AddComponent<FishNetRuntimeInstaller>().Configure(manager, settings, player.GetComponent<NetworkObject>());
 
             spawner.Spawns = new Transform[4];
             for (var index = 0; index < spawner.Spawns.Length; index++)
@@ -174,8 +182,9 @@ namespace Haven.Framework.Editor
         private static void RegisterScene()
         {
             var scenes = EditorBuildSettings.scenes.ToList();
-            scenes.RemoveAll(item => item.path == ScenePath);
+            scenes.RemoveAll(item => item.path == ScenePath || item.path == WorldScenePath);
             scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+            scenes.Insert(1, new EditorBuildSettingsScene(WorldScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 

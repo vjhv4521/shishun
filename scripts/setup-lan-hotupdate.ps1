@@ -9,6 +9,7 @@ param(
     [switch]$SetPrivateProfile,
     [string]$ExpectedNetworkName,
     [switch]$EnableGameplay,
+    [switch]$RemediateLegacyRules,
     [switch]$DiscoverOnly
 )
 
@@ -27,7 +28,7 @@ function Get-PrimaryLanContext {
         Select-Object -First 1
 
     if (-not $configuration) {
-        throw '未找到带 IPv4 默认网关的活动物理网卡。请先连接私人路由器或手机热点。'
+        throw 'No active physical adapter with an IPv4 default gateway was found. Connect to a private router or phone hotspot first.'
     }
 
     $ipv4Address = $configuration.IPv4Address |
@@ -35,7 +36,7 @@ function Get-PrimaryLanContext {
         Select-Object -ExpandProperty IPAddress -First 1
     $profile = Get-NetConnectionProfile -InterfaceIndex $configuration.InterfaceIndex -ErrorAction Stop
     if ([string]::IsNullOrWhiteSpace($ipv4Address)) {
-        throw "网卡 $($configuration.InterfaceAlias) 没有可用的 IPv4 地址。"
+        throw "Adapter $($configuration.InterfaceAlias) has no usable IPv4 address."
     }
 
     [pscustomobject]@{
@@ -74,31 +75,42 @@ function Set-LanFirewallRule {
 
 $lan = Get-PrimaryLanContext
 $patchHost = "http://$($lan.IPv4Address):$PatchPort/patches"
-Write-Host "活动网卡：$($lan.InterfaceAlias)"
-Write-Host "网络名称：$($lan.NetworkName)"
-Write-Host "网络类别：$($lan.NetworkCategory)"
-Write-Host "服务器 IPv4：$($lan.IPv4Address)"
-Write-Host "补丁版本地址：$patchHost/PC/$AppVersion/DefaultPackage.version"
+$legacyRules = @(Get-NetFirewallRule -DisplayName 'havencamp' -ErrorAction SilentlyContinue)
+Write-Host "Active adapter: $($lan.InterfaceAlias)"
+Write-Host "Network name: $($lan.NetworkName)"
+Write-Host "Network category: $($lan.NetworkCategory)"
+Write-Host "Server IPv4: $($lan.IPv4Address)"
+Write-Host "Patch version URL: $patchHost/PC/$AppVersion/DefaultPackage.version"
+Write-Host "Legacy broad 'havencamp' rules: $($legacyRules.Count)"
 
 if ($DiscoverOnly) {
-    Write-Host '仅检测模式：没有修改网络、防火墙或 Unity 项目。'
+    Write-Host 'Discovery only: no network, firewall, or Unity project settings were changed.'
     return
 }
 
 if (-not (Test-IsAdministrator)) {
-    throw '此配置需要管理员权限。请以管理员身份打开 PowerShell。'
+    throw 'Administrator privileges are required. Open PowerShell as Administrator.'
 }
 
 if ($lan.NetworkCategory -eq 'Public') {
     if (-not $SetPrivateProfile -or [string]::IsNullOrWhiteSpace($ExpectedNetworkName) -or $ExpectedNetworkName -cne $lan.NetworkName) {
-        throw "当前网络 '$($lan.NetworkName)' 是 Public。仅在确认它是自己的路由器/热点后，使用 -SetPrivateProfile -ExpectedNetworkName '$($lan.NetworkName)'；不要在校园公共 Wi-Fi 上执行。"
+        throw "Network '$($lan.NetworkName)' is Public. Only after confirming it is your own router/hotspot, use -SetPrivateProfile -ExpectedNetworkName '$($lan.NetworkName)'. Never do this on campus or public Wi-Fi."
     }
     Set-NetConnectionProfile -InterfaceIndex $lan.InterfaceIndex -NetworkCategory Private
     $lan.NetworkCategory = 'Private'
 }
 
 if ($lan.NetworkCategory -ne 'Private') {
-    throw "当前网络类别是 $($lan.NetworkCategory)，本方案只允许 Private 网络。"
+    throw "Network category is $($lan.NetworkCategory); this setup only permits a Private network."
+}
+
+if ($legacyRules.Count -gt 0) {
+    if (-not $RemediateLegacyRules) {
+        throw "Found $($legacyRules.Count) legacy rules named 'havencamp'. After confirmation, use -RemediateLegacyRules to remove exactly those rules and create least-privilege replacements."
+    }
+    $legacyRules | Disable-NetFirewallRule
+    $legacyRules | Remove-NetFirewallRule
+    Write-Host "Removed $($legacyRules.Count) legacy 'havencamp' rules."
 }
 
 Set-LanFirewallRule -Name 'Haven Patch Server TCP 5080' -Protocol TCP -Port $PatchPort
@@ -106,7 +118,7 @@ if ($EnableGameplay) {
     Set-LanFirewallRule -Name 'Haven Game Server UDP 7770' -Protocol UDP -Port $GamePort
 }
 
-Write-Host '局域网防火墙配置完成；未更改任何已跟踪的 Unity 配置。'
-Write-Host "制作可分发客户端前设置：`$env:HAVEN_PATCH_BASE_URL = '$patchHost'"
-Write-Host "启动 Gateway：.\scripts\start-gateway.ps1 -Port $PatchPort -AppVersion $AppVersion"
-Write-Host "合作伙伴测试：.\scripts\test-lan-hotupdate.ps1 -ServerAddress $($lan.IPv4Address) -Port $PatchPort -AppVersion $AppVersion"
+Write-Host 'LAN firewall setup completed. No tracked Unity settings were changed.'
+Write-Host "Before building a distributable client: `$env:HAVEN_PATCH_BASE_URL = '$patchHost'"
+Write-Host "Start Gateway: .\scripts\start-gateway.ps1 -Port $PatchPort -AppVersion $AppVersion"
+Write-Host "Partner check: .\scripts\test-lan-hotupdate.ps1 -ServerAddress $($lan.IPv4Address) -Port $PatchPort -AppVersion $AppVersion"

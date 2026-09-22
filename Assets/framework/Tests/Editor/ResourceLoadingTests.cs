@@ -48,6 +48,13 @@ namespace Haven.Framework.Tests
             Assert.IsTrue(asset.Succeeded, asset.Error?.ToString());
             Assert.That(asset.Value.Asset.text, Does.Contain("fire_preparation_small"));
             asset.Value.Dispose();
+
+            FrameworkResult<ResourceLease<Sprite>> badge = default;
+            yield return SafeCoroutine.Run(resources.LoadAsset<Sprite>("HotUpdateDemoBadge", result => badge = result), exception => caught = exception);
+            Assert.IsNull(caught);
+            Assert.IsTrue(badge.Succeeded, badge.Error?.ToString());
+            Assert.Greater(badge.Value.Asset.rect.width, 0f);
+            badge.Value.Dispose();
             UnityEngine.Object.Destroy(owner);
             UnityEngine.Object.Destroy(settings);
         }

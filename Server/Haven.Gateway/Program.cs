@@ -37,6 +37,18 @@ var patchRoot = Path.GetFullPath(patchOptions.Root, app.Environment.ContentRootP
 Directory.CreateDirectory(patchRoot);
 
 app.UseRateLimiter();
+app.Use(async (context, next) =>
+{
+    if (PatchRequestPolicy.ShouldSimulateDownloadFailure(context.Request.Path.Value, patchOptions.SimulateDownloadFailure))
+    {
+        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        context.Response.Headers.RetryAfter = "1";
+        await context.Response.WriteAsJsonAsync(new { error = "simulated_patch_download_failure" });
+        return;
+    }
+
+    await next();
+});
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(patchRoot),
@@ -77,7 +89,8 @@ app.MapGet("/health", (IOptions<DeepSeekOptions> deepSeek) => Results.Ok(new
 {
     status = "ok",
     deepSeekConfigured = !string.IsNullOrWhiteSpace(deepSeek.Value.ApiKey),
-    patchHosting = true
+    patchHosting = true,
+    simulatePatchDownloadFailure = patchOptions.SimulateDownloadFailure
 }));
 
 app.MapPost("/api/v1/quests/generate", async (

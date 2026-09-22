@@ -29,13 +29,22 @@
     <type fullname="Haven.Framework.Core.IHotfixEntry" preserve="all" />
     <type fullname="Haven.Framework.Core.IServiceRegistry" preserve="all" />
     <type fullname="Haven.Framework.Core.SafeCoroutine" preserve="all" />
+    <type fullname="Haven.Framework.Demo.HavenDemoHud" preserve="all" />
+    <type fullname="Haven.Framework.Resources.IResourceService" preserve="all" />
+    <type fullname="Haven.Framework.Resources.ResourceLease`1" preserve="all" />
     <type fullname="Haven.Framework.Services.AiQuestRequest" preserve="all" />
     <type fullname="Haven.Framework.Services.AiQuestResponse" preserve="all" />
     <type fullname="Haven.Framework.Services.AiQuestSource" preserve="all" />
     <type fullname="Haven.Framework.Services.ILLMService" preserve="all" />
     <type fullname="Haven.Framework.Services.INetworkService" preserve="all" />
+    <type fullname="Haven.Framework.Services.IRoomService" preserve="all" />
     <type fullname="Haven.Framework.Services.NetworkEndpoint" preserve="all" />
     <type fullname="Haven.Framework.Services.NetworkState" preserve="all" />
+    <type fullname="Haven.Framework.Services.NetworkStateChanged" preserve="all" />
+    <type fullname="Haven.Framework.Services.RoomGameLoadProgressChanged" preserve="all" />
+    <type fullname="Haven.Framework.Services.RoomPhase" preserve="all" />
+    <type fullname="Haven.Framework.Services.RoomSnapshot" preserve="all" />
+    <type fullname="Haven.Framework.Services.RoomSnapshotChanged" preserve="all" />
   </assembly>
   <assembly fullname="System">
     <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" preserve="all" />
@@ -47,16 +56,21 @@
     <type fullname="System.Linq.Enumerable" preserve="all" />
     <type fullname="System.Linq.IOrderedEnumerable`1" preserve="all" />
   </assembly>
+  <assembly fullname="UnityEngine.CoreModule">
+    <type fullname="UnityEngine.Coroutine" preserve="all" />
+    <type fullname="UnityEngine.Object" preserve="all" />
+    <type fullname="UnityEngine.Sprite" preserve="all" />
+  </assembly>
   <assembly fullname="UnityEngine.JSONSerializeModule">
     <type fullname="UnityEngine.JsonUtility" preserve="all" />
   </assembly>
   <assembly fullname="mscorlib">
+    <type fullname="System.Action" preserve="all" />
     <type fullname="System.Action`1" preserve="all" />
     <type fullname="System.ArgumentException" preserve="all" />
     <type fullname="System.ArgumentNullException" preserve="all" />
     <type fullname="System.Array" preserve="all" />
     <type fullname="System.Byte" preserve="all" />
-    <type fullname="System.Collections.Generic.Dictionary`2" preserve="all" />
     <type fullname="System.Collections.Generic.IComparer`1" preserve="all" />
     <type fullname="System.Collections.Generic.IEnumerable`1" preserve="all" />
     <type fullname="System.Collections.Generic.IEnumerator`1" preserve="all" />
@@ -71,6 +85,7 @@
     <type fullname="System.Diagnostics.DebuggerHiddenAttribute" preserve="all" />
     <type fullname="System.Enum" preserve="all" />
     <type fullname="System.Exception" preserve="all" />
+    <type fullname="System.Func`1" preserve="all" />
     <type fullname="System.Func`2" preserve="all" />
     <type fullname="System.Guid" preserve="all" />
     <type fullname="System.IDisposable" preserve="all" />
@@ -90,6 +105,7 @@
     <type fullname="System.String" preserve="all" />
     <type fullname="System.StringComparer" preserve="all" />
     <type fullname="System.Type" preserve="all" />
+    <type fullname="System.UInt16" preserve="all" />
     <type fullname="System.ValueType" preserve="all" />
   </assembly>
 </linker>

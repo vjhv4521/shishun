@@ -14,11 +14,12 @@ namespace Haven.Framework.Editor
     {
         private const string PackageName = "DefaultPackage";
         private const string HotUpdateSettingsPath = "Assets/Resources/HavenHotUpdateSettings.asset";
+        private const string HotUpdateDemoBadgePath = "Assets/Hotfix/Content/HotUpdateDemo/HotUpdateDemoBadge.png";
 
         [MenuItem("Haven/Content/1. Build Current Assets and Publish Locally")]
         public static void BuildCurrentAssetsAndPublish()
         {
-            BuildAndPublish(EBundledCopyOption.None, ResolvePackageVersion());
+            BuildAndPublish(EBundledCopyOption.None, ResolvePackageVersion(), true);
         }
 
         [MenuItem("Haven/Content/2. Compile Hotfix and Publish Locally")]
@@ -26,12 +27,34 @@ namespace Haven.Framework.Editor
         {
             EnsureWindowsTarget();
             HavenFrameworkSetup.CompileHotfixOnly();
-            BuildAndPublish(EBundledCopyOption.None, ResolvePackageVersion());
+            BuildAndPublish(EBundledCopyOption.None, ResolvePackageVersion(), true);
         }
 
-        public static void BuildBaselineForPlayer()
+        public static void BuildBaselineForPlayer(bool publishRemotePointer)
         {
-            BuildAndPublish(EBundledCopyOption.ClearAndCopyAll, ResolvePackageVersion());
+            BuildAndPublish(EBundledCopyOption.ClearAndCopyAll, ResolvePackageVersion(), publishRemotePointer);
+        }
+
+        public static void PublishBuiltPackage(string packageVersion)
+        {
+            if (string.IsNullOrWhiteSpace(packageVersion))
+                throw new ArgumentException("A package version is required before publishing.", nameof(packageVersion));
+
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName
+                              ?? throw new InvalidOperationException("Could not resolve the Unity project root.");
+            var settings = AssetDatabase.LoadAssetAtPath<HotUpdateSettings>(HotUpdateSettingsPath)
+                           ?? throw new FileNotFoundException("Haven hot-update settings are missing.", HotUpdateSettingsPath);
+            var packageDirectory = Path.Combine(
+                projectRoot,
+                "Build",
+                "YooAssetBuild",
+                BuildTarget.StandaloneWindows64.ToString(),
+                PackageName,
+                packageVersion);
+            ValidateHotUpdateDemoContent(packageDirectory, packageVersion);
+            var publishDirectory = Path.Combine(projectRoot, "Build", "LocalServer", "patches", "PC", settings.AppVersion);
+            PublishDirectory(packageDirectory, publishDirectory, projectRoot);
+            Debug.Log($"[Haven] YooAsset {packageVersion} published to {publishDirectory} after the player build completed.");
         }
 
         // Entry point for -executeMethod batch mode. HAVEN_CONTENT_VERSION can override the generated version.
@@ -40,10 +63,11 @@ namespace Haven.Framework.Editor
             BuildCurrentAssetsAndPublish();
         }
 
-        private static void BuildAndPublish(EBundledCopyOption bundledCopyOption, string packageVersion)
+        private static void BuildAndPublish(EBundledCopyOption bundledCopyOption, string packageVersion, bool publishRemotePointer)
         {
             EnsureWindowsTarget();
             HavenFrameworkSetup.SetupProject();
+            PrepareHotUpdateDemoBadge();
 
             // AssetBundle building does not require IL2CPP. On machines where only the
             // Windows Mono module is installed, Unity disables content compilation while
@@ -55,7 +79,7 @@ namespace Haven.Framework.Editor
             try
             {
                 PlayerSettings.SetScriptingBackend(namedTarget, ScriptingImplementation.Mono2x);
-                BuildAndPublishWithCurrentBackend(bundledCopyOption, packageVersion);
+                BuildAndPublishWithCurrentBackend(bundledCopyOption, packageVersion, publishRemotePointer);
             }
             finally
             {
@@ -63,7 +87,7 @@ namespace Haven.Framework.Editor
             }
         }
 
-        private static void BuildAndPublishWithCurrentBackend(EBundledCopyOption bundledCopyOption, string packageVersion)
+        private static void BuildAndPublishWithCurrentBackend(EBundledCopyOption bundledCopyOption, string packageVersion, bool publishRemotePointer)
         {
 
             var projectRoot = Directory.GetParent(Application.dataPath)?.FullName
@@ -100,11 +124,56 @@ namespace Haven.Framework.Editor
             var result = new LegacyBuildPipeline().Run(parameters, true);
             if (!result.Success)
                 throw new InvalidOperationException($"YooAsset build failed in {result.FailedTask}: {result.ErrorInfo}");
+            ValidateHotUpdateDemoContent(result.OutputPackageDirectory, packageVersion);
 
-            var publishDirectory = Path.Combine(projectRoot, "Build", "LocalServer", "patches", "PC", settings.AppVersion);
-            PublishDirectory(result.OutputPackageDirectory, publishDirectory, projectRoot);
+            if (publishRemotePointer)
+            {
+                var publishDirectory = Path.Combine(projectRoot, "Build", "LocalServer", "patches", "PC", settings.AppVersion);
+                PublishDirectory(result.OutputPackageDirectory, publishDirectory, projectRoot);
+                Debug.Log($"[Haven] YooAsset {packageVersion} published to {publishDirectory}");
+            }
+            else
+            {
+                Debug.Log($"[Haven] YooAsset {packageVersion} copied into the player baseline without promoting the remote version pointer.");
+            }
             AssetDatabase.Refresh();
-            Debug.Log($"[Haven] YooAsset {packageVersion} published to {publishDirectory}");
+        }
+
+        [MenuItem("Haven/Content/0. Prepare Hot Update Demo Badge")]
+        public static void PrepareHotUpdateDemoBadge()
+        {
+            if (!File.Exists(HotUpdateDemoBadgePath))
+                throw new FileNotFoundException("The visible hot-update demo badge is missing.", HotUpdateDemoBadgePath);
+
+            AssetDatabase.ImportAsset(HotUpdateDemoBadgePath, ImportAssetOptions.ForceSynchronousImport);
+            var importer = AssetImporter.GetAtPath(HotUpdateDemoBadgePath) as TextureImporter
+                           ?? throw new InvalidOperationException("The hot-update demo badge is not a Unity texture asset.");
+            var changed = importer.textureType != TextureImporterType.Sprite ||
+                          importer.spriteImportMode != SpriteImportMode.Single ||
+                          importer.mipmapEnabled ||
+                          !importer.alphaIsTransparency ||
+                          importer.maxTextureSize != 2048;
+            if (!changed)
+                return;
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.mipmapEnabled = false;
+            importer.alphaIsTransparency = true;
+            importer.maxTextureSize = 2048;
+            importer.SaveAndReimport();
+        }
+
+        private static void ValidateHotUpdateDemoContent(string packageDirectory, string packageVersion)
+        {
+            var reportPath = Path.Combine(packageDirectory, $"DefaultPackage_{packageVersion}.report");
+            if (!File.Exists(reportPath))
+                throw new FileNotFoundException("YooAsset build report is missing.", reportPath);
+            var report = File.ReadAllText(reportPath);
+            if (report.IndexOf("Haven.Hotfix.dll", StringComparison.OrdinalIgnoreCase) < 0)
+                throw new InvalidDataException("YooAsset report does not contain Haven.Hotfix.dll.");
+            if (report.IndexOf("HotUpdateDemoBadge", StringComparison.OrdinalIgnoreCase) < 0)
+                throw new InvalidDataException("YooAsset report does not contain the visible hot-update demo badge.");
         }
 
         private static void PublishDirectory(string sourceDirectory, string destinationDirectory, string projectRoot)

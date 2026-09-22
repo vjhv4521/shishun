@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/FrameworkDemo.unity
     guid: 35a2fc1a83d959e4781b4e543c596da1
   - enabled: 1
+    path: Assets/Scenes/WorldGenMap.unity
+    guid: de0a75130d45aaa4d91b9b92fc12f895
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:

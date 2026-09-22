@@ -147,7 +147,7 @@ namespace Haven.Camp.Editor
                 SettingsUtil.Enable = true;
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.IL2CPP);
                 HavenFrameworkSetup.GenerateAllAndPrepareAssets();
-                HavenContentBuilder.BuildBaselineForPlayer();
+                HavenContentBuilder.BuildBaselineForPlayer(false);
                 serialized.Update();
                 serialized.FindProperty("playMode").enumValueIndex = (int)HotUpdatePlayMode.Offline;
                 serialized.ApplyModifiedPropertiesWithoutUndo();

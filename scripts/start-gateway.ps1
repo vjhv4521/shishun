@@ -7,7 +7,8 @@ param(
     [ValidateRange(1, 65535)]
     [int]$Port = 5080,
     [ValidatePattern('^[0-9A-Za-z][0-9A-Za-z._-]*$')]
-    [string]$AppVersion = '0.1.0'
+    [string]$AppVersion = '0.1.0',
+    [switch]$SimulatePatchDownloadFailure
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,7 +28,7 @@ function Get-PrimaryLanContext {
         Select-Object -First 1
 
     if (-not $configuration) {
-        throw '未找到带 IPv4 默认网关的活动物理网卡。请先连接私人路由器或手机热点。'
+        throw 'No active physical adapter with an IPv4 default gateway was found. Connect to a private router or phone hotspot first.'
     }
 
     $ipv4Address = $configuration.IPv4Address |
@@ -35,7 +36,7 @@ function Get-PrimaryLanContext {
         Select-Object -ExpandProperty IPAddress -First 1
     $profile = Get-NetConnectionProfile -InterfaceIndex $configuration.InterfaceIndex -ErrorAction Stop
     if ([string]::IsNullOrWhiteSpace($ipv4Address)) {
-        throw "网卡 $($configuration.InterfaceAlias) 没有可用的 IPv4 地址。"
+        throw "Adapter $($configuration.InterfaceAlias) has no usable IPv4 address."
     }
 
     [pscustomobject]@{
@@ -49,12 +50,12 @@ $lanContext = $null
 if ($ListenAddress -eq '0.0.0.0') {
     $lanContext = Get-PrimaryLanContext
     if ($lanContext.NetworkCategory -ne 'Private') {
-        throw "当前活动网络 '$($lanContext.NetworkName)' 是 $($lanContext.NetworkCategory)，拒绝对局域网监听。请切换到私人路由器/热点，再运行 .\scripts\setup-lan-hotupdate.ps1。"
+        throw "Active network '$($lanContext.NetworkName)' is $($lanContext.NetworkCategory); refusing LAN binding. Switch to a private router/hotspot, then run .\scripts\setup-lan-hotupdate.ps1."
     }
 }
 
 if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-    Write-Warning '未配置 DeepSeek API Key；补丁托管不受影响。'
+    Write-Warning 'DeepSeek API Key is not configured; patch hosting is unaffected.'
 }
 
 if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
@@ -65,16 +66,20 @@ if (-not [string]::IsNullOrWhiteSpace($SharedToken)) {
 }
 
 if (-not (Test-Path -LiteralPath $patchVersionFile -PathType Leaf)) {
-    Write-Warning "尚未找到补丁版本文件：$patchVersionFile。请先在 Unity 执行 Haven/Content/1. Build Current Assets and Publish Locally。"
+    Write-Warning "Patch version file was not found: $patchVersionFile. Run Haven/Content/1. Build Current Assets and Publish Locally in Unity first."
 }
 
 $env:ASPNETCORE_URLS = "http://${ListenAddress}:$Port"
-Write-Host "Gateway 监听地址：$($env:ASPNETCORE_URLS)"
-Write-Host "本机健康检查：http://127.0.0.1:$Port/health"
+$env:PatchStorage__SimulateDownloadFailure = if ($SimulatePatchDownloadFailure) { 'true' } else { 'false' }
+Write-Host "Gateway listen address: $($env:ASPNETCORE_URLS)"
+Write-Host "Local health check: http://127.0.0.1:$Port/health"
 if ($lanContext) {
-    Write-Host "合作伙伴健康检查：http://$($lanContext.IPv4Address):$Port/health"
-    Write-Host "补丁版本地址：http://$($lanContext.IPv4Address):$Port/patches/PC/$AppVersion/DefaultPackage.version"
+    Write-Host "Partner health check: http://$($lanContext.IPv4Address):$Port/health"
+    Write-Host "Patch version URL: http://$($lanContext.IPv4Address):$Port/patches/PC/$AppVersion/DefaultPackage.version"
 }
-Write-Host '按 Ctrl+C 停止服务器。'
+if ($SimulatePatchDownloadFailure) {
+    Write-Warning 'Patch download failure mode is active: version and manifest requests succeed, while .rawfile/.bundle requests return HTTP 503.'
+}
+Write-Host 'Press Ctrl+C to stop the server.'
 
-dotnet run --project $gatewayProject --no-launch-profile
+dotnet run --project $gatewayProject --no-launch-profile -- --urls $env:ASPNETCORE_URLS
