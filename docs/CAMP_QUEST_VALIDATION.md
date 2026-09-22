@@ -56,3 +56,9 @@
 ## 管事站位修正（2026-09-18）
 
 `WorldGenMap` 原管事位置 `(3.10, 0.05, 0.80)` 距最近松树约 1.2 米，树冠遮住人物。已移到 `(-3.00, 0.05, -1.00)` 并面向玩家；场景初始化默认位置同步调整。Unity 场景校验通过，日志 `Build/Logs/CampStewardReposition.log`。EditorDirect 离线烟测通过点击交互、聊天回退、两次物资交付和场景重载，退出码 0，日志 `Build/Logs/CampStewardMovedSmoke.log`。先前 Windows 演示包未因本次场景调整重新构建，仍包含旧站位。
+
+## 站位修正后的 Windows 重建（2026-09-22）
+
+已在最新源码上重新执行 HybridCLR Generate All、Offline YooAsset 基线和 Windows IL2CPP 构建，内容版本为 `0.1.0-camp-v2.1`。`Build/WindowsCampQuest/GameAssembly.dll` 的构建时间为 2026-09-22 18:26:12，已晚于 9 月 18 日站位修正；SHA256 为 `815CDE567863814E9D1E9B9F660751B19F116781E09D27C212AF5986FDBE967B`。启动器 `HavenCamp.exe` SHA256 为 `203C1B788F8E9B886826BB58C610DF4C92BAFD39E86FE61BBC93750376C6E1E4`。
+
+重新打包随包 Gateway 和说明文档后，Windows Player 离线委托烟测与独立重载烟测均退出码 0；完成聊天回退、两次真实拾取与交付、存档失败回滚、进程内场景重载、退出后再读档及防重复奖励。证据见 `Logs/CampPlayerSmoke.log`和 `Logs/CampPlayerReload.log`。

@@ -47,4 +47,41 @@ namespace Haven.Hotfix.Services
             yield break;
         }
     }
+
+    public sealed class OfflineRoomService : IRoomService
+    {
+        public RoomSnapshot Current => RoomSnapshot.Empty;
+
+        public IEnumerator CreateRoom(string displayName, Action<FrameworkResult<RoomSnapshot>> completed)
+        {
+            return Fail(completed);
+        }
+
+        public IEnumerator JoinRoom(string roomCode, string displayName, Action<FrameworkResult<RoomSnapshot>> completed)
+        {
+            return Fail(completed);
+        }
+
+        public IEnumerator SetReady(bool ready, Action<FrameworkResult<RoomSnapshot>> completed)
+        {
+            return Fail(completed);
+        }
+
+        public IEnumerator StartGame(Action<FrameworkResult<RoomSnapshot>> completed)
+        {
+            return Fail(completed);
+        }
+
+        public IEnumerator LeaveRoom(Action<FrameworkResult<RoomSnapshot>> completed)
+        {
+            return Fail(completed);
+        }
+
+        private static IEnumerator Fail(Action<FrameworkResult<RoomSnapshot>> completed)
+        {
+            completed?.Invoke(FrameworkResult<RoomSnapshot>.Failure(new FrameworkError(
+                RoomErrorCodes.NotConnected, "当前运行环境未安装 FishNet 房间服务。", "OfflineRoom", true)));
+            yield break;
+        }
+    }
 }

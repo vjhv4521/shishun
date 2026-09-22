@@ -1,0 +1,8 @@
+namespace Haven.Hotfix.Lobby
+{
+    internal static class HotUpdateDemoRevision
+    {
+        public const string Id = "V1";
+        public const string Announcement = "营地公告 V1：补丁频道已连接，请在大厅待命。";
+    }
+}

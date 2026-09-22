@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using Haven.Framework.Bootstrap;
 using Haven.Framework.Core;
+using Haven.Framework.Demo;
+using Haven.Framework.HotUpdate;
 using Haven.Hotfix.Flow;
 using NUnit.Framework;
 using UnityEngine;
@@ -67,6 +69,49 @@ namespace Haven.Framework.Tests
             Assert.IsTrue(flow.TryTransition(GameFlowState.MainMenu));
             Assert.AreEqual(GameFlowState.Boot, last.Previous);
             Assert.AreEqual(GameFlowState.MainMenu, last.Current);
+        }
+
+        [Test]
+        public void GameFlow_SupportsRoomLoadingGameAndLobbyReturn()
+        {
+            var flow = new GameFlowService(new EventBus());
+
+            Assert.IsTrue(flow.TryTransition(GameFlowState.MainMenu));
+            Assert.IsTrue(flow.TryTransition(GameFlowState.Lobby));
+            Assert.IsTrue(flow.TryTransition(GameFlowState.Room));
+            Assert.IsTrue(flow.TryTransition(GameFlowState.LoadingGame));
+            Assert.IsTrue(flow.TryTransition(GameFlowState.InGame));
+            Assert.IsTrue(flow.TryTransition(GameFlowState.ReturningToLobby));
+            Assert.IsTrue(flow.TryTransition(GameFlowState.Lobby));
+        }
+
+        [Test]
+        public void HotUpdateUiModel_TracksDownloadAndHoldsCompletion()
+        {
+            var model = new HotUpdateUiModel();
+            model.Observe(new HotUpdateProgress(HotUpdateStage.CreateDownloader, 1f, "found", 0, 2048, 0, 2), 10f);
+            model.Observe(new HotUpdateProgress(HotUpdateStage.DownloadFiles, 0.5f, "download", 1024, 2048, 1, 2), 10.5f);
+            model.Observe(new HotUpdateProgress(HotUpdateStage.Completed, 1f, "done"), 11f);
+
+            Assert.IsTrue(model.DownloadObserved);
+            Assert.AreEqual(1, model.DownloadedFiles);
+            Assert.AreEqual(2, model.TotalFiles);
+            Assert.AreEqual(1024, model.DownloadedBytes);
+            Assert.IsTrue(model.ShouldDraw(BootstrapState.Running, 12f));
+            Assert.IsFalse(model.ShouldDraw(BootstrapState.Running, 12.6f));
+
+            model.ResetForRetry();
+            Assert.IsFalse(model.DownloadObserved);
+            Assert.IsTrue(model.ShouldDraw(BootstrapState.Starting, 100f));
+        }
+
+        [Test]
+        public void HotUpdateUi_MapsRetryableDownloadFailureToChinese()
+        {
+            var error = new FrameworkError("HU_DOWNLOAD_FAILED", "download failed", "HotUpdate", true);
+
+            Assert.That(HavenDemoHud.ToChineseHotUpdateError(error), Does.Contain("重试"));
+            Assert.AreEqual("2.0 KiB", HavenDemoHud.FormatBytes(2048));
         }
 
         [UnityTest]

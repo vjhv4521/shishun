@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Haven.Framework.Core;
 
 namespace Haven.Hotfix.Flow
@@ -9,9 +8,10 @@ namespace Haven.Hotfix.Flow
         Boot,
         MainMenu,
         Lobby,
+        Room,
         LoadingGame,
         InGame,
-        ReturningToMenu
+        ReturningToLobby
     }
 
     public readonly struct GameFlowStateChanged
@@ -35,17 +35,6 @@ namespace Haven.Hotfix.Flow
 
     public sealed class GameFlowService : IGameFlowService
     {
-        private static readonly Dictionary<GameFlowState, HashSet<GameFlowState>> AllowedTransitions =
-            new Dictionary<GameFlowState, HashSet<GameFlowState>>
-            {
-                { GameFlowState.Boot, new HashSet<GameFlowState> { GameFlowState.MainMenu } },
-                { GameFlowState.MainMenu, new HashSet<GameFlowState> { GameFlowState.Lobby } },
-                { GameFlowState.Lobby, new HashSet<GameFlowState> { GameFlowState.LoadingGame, GameFlowState.MainMenu } },
-                { GameFlowState.LoadingGame, new HashSet<GameFlowState> { GameFlowState.InGame, GameFlowState.Lobby } },
-                { GameFlowState.InGame, new HashSet<GameFlowState> { GameFlowState.ReturningToMenu } },
-                { GameFlowState.ReturningToMenu, new HashSet<GameFlowState> { GameFlowState.MainMenu } }
-            };
-
         private readonly IEventBus _events;
 
         public GameFlowService(IEventBus events)
@@ -57,7 +46,21 @@ namespace Haven.Hotfix.Flow
 
         public bool CanTransition(GameFlowState target)
         {
-            return target != Current && AllowedTransitions.TryGetValue(Current, out var targets) && targets.Contains(target);
+            if (target == Current)
+                return false;
+            return Current switch
+            {
+                GameFlowState.Boot => target == GameFlowState.MainMenu,
+                GameFlowState.MainMenu => target == GameFlowState.Lobby,
+                GameFlowState.Lobby => target == GameFlowState.Room || target == GameFlowState.MainMenu,
+                GameFlowState.Room => target == GameFlowState.LoadingGame || target == GameFlowState.Lobby || target == GameFlowState.MainMenu,
+                GameFlowState.LoadingGame => target == GameFlowState.InGame || target == GameFlowState.Room ||
+                                             target == GameFlowState.Lobby || target == GameFlowState.MainMenu,
+                GameFlowState.InGame => target == GameFlowState.ReturningToLobby || target == GameFlowState.MainMenu,
+                GameFlowState.ReturningToLobby => target == GameFlowState.Lobby || target == GameFlowState.InGame ||
+                                                  target == GameFlowState.MainMenu,
+                _ => false
+            };
         }
 
         public bool TryTransition(GameFlowState target)

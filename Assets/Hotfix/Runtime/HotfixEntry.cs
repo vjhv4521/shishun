@@ -28,6 +28,7 @@ namespace Haven.Hotfix
             // Gameplay, Network, AIGC and UI modules are added here as the project grows.
             // Keep this entry and all business modules in Haven.Hotfix so they remain replaceable.
             _modules.Add(new CoreServicesModule());
+            _modules.Add(new LobbyModule());
             _modules.Add(new CampQuestModule());
 
             yield return _modules.Initialize(context);

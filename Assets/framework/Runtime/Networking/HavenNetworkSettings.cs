@@ -18,8 +18,12 @@ namespace Haven.Networking
         [SerializeField] private string defaultHost = "127.0.0.1";
         [SerializeField] private ushort port = 7770;
         [SerializeField, Range(2, 4)] private int maximumPlayers = 4;
-        [SerializeField, Min(1)] private int protocolVersion = 1;
+        [SerializeField, Range(5, 16)] private int maximumConnections = 8;
+        [SerializeField, Range(2, 4)] private int minimumPlayers = 2;
+        [SerializeField, Min(1)] private int protocolVersion = 2;
         [SerializeField, Min(1f)] private float connectTimeoutSeconds = 10f;
+        [SerializeField, Min(1f)] private float roomRequestTimeoutSeconds = 10f;
+        [SerializeField, Min(5f)] private float roomLoadTimeoutSeconds = 30f;
         [SerializeField, Min(0.02f)] private float inputSendInterval = 0.05f;
         [SerializeField, Min(0.1f)] private float playerMoveSpeed = 4f;
 
@@ -39,8 +43,12 @@ namespace Haven.Networking
         public string DefaultHost => string.IsNullOrWhiteSpace(defaultHost) ? "127.0.0.1" : defaultHost.Trim();
         public ushort Port => port == 0 ? (ushort)7770 : port;
         public int MaximumPlayers => Mathf.Clamp(maximumPlayers, 2, 4);
+        public int MaximumConnections => Mathf.Clamp(Mathf.Max(maximumConnections, MaximumPlayers + 1), 5, 16);
+        public int MinimumPlayers => Mathf.Clamp(minimumPlayers, 2, MaximumPlayers);
         public int ProtocolVersion => Mathf.Max(1, protocolVersion);
         public float ConnectTimeoutSeconds => Mathf.Max(1f, connectTimeoutSeconds);
+        public float RoomRequestTimeoutSeconds => Mathf.Max(1f, roomRequestTimeoutSeconds);
+        public float RoomLoadTimeoutSeconds => Mathf.Max(5f, roomLoadTimeoutSeconds);
         public float InputSendInterval => Mathf.Max(0.02f, inputSendInterval);
         public float PlayerMoveSpeed => Mathf.Max(0.1f, playerMoveSpeed);
         public string MenuSceneName => SceneNameOrDefault(menuSceneName, "MainMenu");

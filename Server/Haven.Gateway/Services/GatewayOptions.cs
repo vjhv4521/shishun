@@ -20,4 +20,19 @@ public sealed class PatchStorageOptions
 {
     public const string SectionName = "PatchStorage";
     public string Root { get; set; } = "../../Build/LocalServer/patches";
+    public bool SimulateDownloadFailure { get; set; }
+}
+
+public static class PatchRequestPolicy
+{
+    public static bool ShouldSimulateDownloadFailure(string? requestPath, bool enabled)
+    {
+        if (!enabled || string.IsNullOrWhiteSpace(requestPath) ||
+            !requestPath.StartsWith("/patches/", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var extension = Path.GetExtension(requestPath);
+        return string.Equals(extension, ".rawfile", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(extension, ".bundle", StringComparison.OrdinalIgnoreCase);
+    }
 }

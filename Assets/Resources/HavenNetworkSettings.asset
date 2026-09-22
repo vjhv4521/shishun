@@ -16,8 +16,12 @@ MonoBehaviour:
   defaultHost: 127.0.0.1
   port: 7770
   maximumPlayers: 4
-  protocolVersion: 1
+  maximumConnections: 8
+  minimumPlayers: 2
+  protocolVersion: 2
   connectTimeoutSeconds: 10
+  roomRequestTimeoutSeconds: 10
+  roomLoadTimeoutSeconds: 30
   inputSendInterval: 0.05
   playerMoveSpeed: 4
   menuSceneName: MainMenu

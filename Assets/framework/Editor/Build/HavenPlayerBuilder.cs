@@ -1,8 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using HybridCLR.Editor;
 using Haven.Framework.HotUpdate;
+using Haven.Networking;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -12,6 +15,13 @@ namespace Haven.Framework.Editor
 {
     public static class HavenPlayerBuilder
     {
+        private enum ClientContentMode
+        {
+            None,
+            Offline,
+            Hosted
+        }
+
         [MenuItem("Haven/Build/Windows Dedicated Server")]
         public static void BuildWindowsDedicatedServer()
         {
@@ -21,26 +31,52 @@ namespace Haven.Framework.Editor
                 StandaloneBuildSubtarget.Server,
                 ScriptingImplementation.Mono2x,
                 BuildOptions.Development,
-                useHostedContent: false);
+                ClientContentMode.None);
         }
 
-        [MenuItem("Haven/Build/Windows Client (HybridCLR)")]
+        [MenuItem("Haven/Build/Windows Client Offline (HybridCLR)")]
+        public static void BuildWindowsOfflineClient()
+        {
+            BuildWindowsClient(ClientContentMode.Offline);
+        }
+
+        [MenuItem("Haven/Build/Windows Client Hosted (HybridCLR)")]
+        public static void BuildWindowsHostedClient()
+        {
+            ValidateHostedReleaseEnvironment();
+            BuildWindowsClient(ClientContentMode.Hosted);
+        }
+
         public static void BuildWindowsClient()
+        {
+            BuildWindowsOfflineClient();
+        }
+
+        private static void BuildWindowsClient(ClientContentMode mode)
         {
             PrepareScene();
             HavenFrameworkSetup.GenerateAllAndPrepareAssets();
-            HavenContentBuilder.BuildBaselineForPlayer();
+            // Keep the remote pointer unchanged until the corresponding player has
+            // actually been created. A failed Hosted build must never become the
+            // version advertised by the gateway.
+            HavenContentBuilder.BuildBaselineForPlayer(false);
             BuildWindows(
                 "Build/WindowsClient/HavenClient.exe",
                 StandaloneBuildSubtarget.Player,
                 ScriptingImplementation.IL2CPP,
                 BuildOptions.Development | BuildOptions.AllowDebugging,
-                useHostedContent: true);
+                mode);
+            if (mode == ClientContentMode.Hosted)
+            {
+                HavenContentBuilder.PublishBuiltPackage(
+                    Environment.GetEnvironmentVariable("HAVEN_CONTENT_VERSION")?.Trim());
+            }
         }
 
         // Entry points for -executeMethod batch mode.
         public static void BuildWindowsDedicatedServerBatch() => BuildWindowsDedicatedServer();
-        public static void BuildWindowsClientBatch() => BuildWindowsClient();
+        public static void BuildWindowsClientBatch() => BuildWindowsOfflineClient();
+        public static void BuildWindowsHostedClientBatch() => BuildWindowsHostedClient();
 
         private static void PrepareScene()
         {
@@ -54,7 +90,7 @@ namespace Haven.Framework.Editor
             StandaloneBuildSubtarget subtarget,
             ScriptingImplementation backend,
             BuildOptions options,
-            bool useHostedContent)
+            ClientContentMode clientMode)
         {
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64 &&
                 !EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64))
@@ -63,40 +99,56 @@ namespace Haven.Framework.Editor
             var namedTarget = NamedBuildTarget.Standalone;
             var previousBackend = PlayerSettings.GetScriptingBackend(namedTarget);
             var previousHybridClrEnabled = SettingsUtil.Enable;
+            var windowsPlatformName = BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneWindows64);
+            var previousCreateSolution = EditorUserBuildSettings.GetPlatformSettings(windowsPlatformName, "CreateSolution");
             var hotUpdateSettings = AssetDatabase.LoadAssetAtPath<HotUpdateSettings>("Assets/Resources/HavenHotUpdateSettings.asset");
-            if (useHostedContent && !hotUpdateSettings)
+            var networkSettings = AssetDatabase.LoadAssetAtPath<HavenNetworkSettings>("Assets/Resources/HavenNetworkSettings.asset");
+            if (clientMode != ClientContentMode.None && !hotUpdateSettings)
                 throw new FileNotFoundException("Haven hot-update settings are missing.", "Assets/Resources/HavenHotUpdateSettings.asset");
+            if (clientMode == ClientContentMode.Hosted && !networkSettings)
+                throw new FileNotFoundException("Haven network settings are missing.", "Assets/Resources/HavenNetworkSettings.asset");
             var serializedHotUpdateSettings = hotUpdateSettings ? new SerializedObject(hotUpdateSettings) : null;
+            var serializedNetworkSettings = networkSettings ? new SerializedObject(networkSettings) : null;
             var playModeProperty = serializedHotUpdateSettings?.FindProperty("playMode");
             var primaryHostProperty = serializedHotUpdateSettings?.FindProperty("primaryHost");
             var fallbackHostProperty = serializedHotUpdateSettings?.FindProperty("fallbackHost");
+            var defaultGameHostProperty = serializedNetworkSettings?.FindProperty("defaultHost");
             var previousPlayMode = playModeProperty?.enumValueIndex ?? -1;
             var previousPrimaryHost = primaryHostProperty?.stringValue;
             var previousFallbackHost = fallbackHostProperty?.stringValue;
-            var buildPatchHost = useHostedContent ? Environment.GetEnvironmentVariable("HAVEN_PATCH_BASE_URL")?.Trim().TrimEnd('/') : null;
-            if (useHostedContent && !string.IsNullOrWhiteSpace(buildPatchHost) &&
-                (!Uri.TryCreate(buildPatchHost, UriKind.Absolute, out var patchUri) ||
-                 (patchUri.Scheme != Uri.UriSchemeHttp && patchUri.Scheme != Uri.UriSchemeHttps) ||
-                 !string.IsNullOrEmpty(patchUri.Query) || !string.IsNullOrEmpty(patchUri.Fragment)))
-                throw new ArgumentException("HAVEN_PATCH_BASE_URL must be an absolute HTTP(S) URL without a query or fragment.");
+            var previousGameHost = defaultGameHostProperty?.stringValue;
+            var buildPatchHost = clientMode == ClientContentMode.Hosted
+                ? Environment.GetEnvironmentVariable("HAVEN_PATCH_BASE_URL")?.Trim().TrimEnd('/')
+                : null;
+            var buildGameHost = clientMode == ClientContentMode.Hosted
+                ? Environment.GetEnvironmentVariable("HAVEN_GAME_SERVER_HOST")?.Trim()
+                : null;
             try
             {
                 // The authoritative server contains only AOT code and must not be
                 // rewritten to IL2CPP by HybridCLR's client-side build processor.
                 SettingsUtil.Enable = backend == ScriptingImplementation.IL2CPP;
                 PlayerSettings.SetScriptingBackend(namedTarget, backend);
-                if (useHostedContent && playModeProperty != null)
+                // Unity 6 remembers "Create Visual Studio Solution" as a per-platform
+                // editor preference. Batch builds must override it or BuildPlayer can
+                // report success while producing a C++ solution instead of the requested
+                // Windows executable.
+                EditorUserBuildSettings.SetPlatformSettings(windowsPlatformName, "CreateSolution", "false");
+                if (clientMode != ClientContentMode.None && playModeProperty != null)
                 {
-                    playModeProperty.enumValueIndex = (int)HotUpdatePlayMode.Host;
-                    if (!string.IsNullOrWhiteSpace(buildPatchHost))
+                    if (clientMode == ClientContentMode.Hosted)
                     {
+                        playModeProperty.enumValueIndex = (int)HotUpdatePlayMode.Host;
                         primaryHostProperty.stringValue = buildPatchHost;
                         fallbackHostProperty.stringValue = buildPatchHost;
-                        Debug.Log($"[Haven] Client patch host for this build: {buildPatchHost}");
+                        defaultGameHostProperty.stringValue = buildGameHost;
+                        serializedNetworkSettings.ApplyModifiedPropertiesWithoutUndo();
+                        Debug.Log($"[Haven] Hosted client endpoints: patches={buildPatchHost}, game={buildGameHost}:{networkSettings.Port}");
                     }
                     else
                     {
-                        Debug.LogWarning("[Haven] HAVEN_PATCH_BASE_URL is not set. This client will use the configured loopback patch host and cannot download from another PC.");
+                        playModeProperty.enumValueIndex = (int)HotUpdatePlayMode.Offline;
+                        Debug.Log("[Haven] Building a self-contained Offline client from the bundled baseline.");
                     }
                     serializedHotUpdateSettings.ApplyModifiedPropertiesWithoutUndo();
                     AssetDatabase.SaveAssets();
@@ -119,6 +171,9 @@ namespace Haven.Framework.Editor
 
                 if (report.summary.result != BuildResult.Succeeded)
                     throw new BuildFailedException($"Haven {subtarget} build failed: {report.summary.result}, errors={report.summary.totalErrors}.");
+                if (!File.Exists(fullLocation))
+                    throw new BuildFailedException(
+                        $"Haven {subtarget} build reported success but did not create the requested executable: {fullLocation}");
                 Debug.Log($"[Haven] {subtarget} build completed: {fullLocation}");
             }
             finally
@@ -131,11 +186,50 @@ namespace Haven.Framework.Editor
                     if (fallbackHostProperty != null)
                         fallbackHostProperty.stringValue = previousFallbackHost;
                     serializedHotUpdateSettings.ApplyModifiedPropertiesWithoutUndo();
-                    AssetDatabase.SaveAssets();
                 }
+                if (defaultGameHostProperty != null && previousGameHost != null)
+                {
+                    defaultGameHostProperty.stringValue = previousGameHost;
+                    serializedNetworkSettings.ApplyModifiedPropertiesWithoutUndo();
+                }
+                AssetDatabase.SaveAssets();
+                EditorUserBuildSettings.SetPlatformSettings(windowsPlatformName, "CreateSolution", previousCreateSolution);
                 PlayerSettings.SetScriptingBackend(namedTarget, previousBackend);
                 SettingsUtil.Enable = previousHybridClrEnabled;
             }
+        }
+
+        private static void ValidateHostedReleaseEnvironment()
+        {
+            var contentVersion = Environment.GetEnvironmentVariable("HAVEN_CONTENT_VERSION")?.Trim();
+            if (string.IsNullOrWhiteSpace(contentVersion))
+                throw new InvalidOperationException("Hosted release builds require an explicit HAVEN_CONTENT_VERSION.");
+            if (!contentVersion.StartsWith(Application.version + "-", StringComparison.Ordinal) ||
+                contentVersion.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                throw new InvalidOperationException($"HAVEN_CONTENT_VERSION must start with '{Application.version}-' and be safe as a file name.");
+
+            var patchHost = Environment.GetEnvironmentVariable("HAVEN_PATCH_BASE_URL")?.Trim().TrimEnd('/');
+            if (!Uri.TryCreate(patchHost, UriKind.Absolute, out var patchUri) ||
+                (patchUri.Scheme != Uri.UriSchemeHttp && patchUri.Scheme != Uri.UriSchemeHttps) ||
+                !string.IsNullOrEmpty(patchUri.Query) || !string.IsNullOrEmpty(patchUri.Fragment) ||
+                patchUri.IsLoopback || !IsPrivateIpv4(patchUri.Host))
+                throw new InvalidOperationException("HAVEN_PATCH_BASE_URL must use a non-loopback private IPv4 HTTP(S) endpoint without a query or fragment.");
+
+            var gameHost = Environment.GetEnvironmentVariable("HAVEN_GAME_SERVER_HOST")?.Trim();
+            if (!IsPrivateIpv4(gameHost))
+                throw new InvalidOperationException("HAVEN_GAME_SERVER_HOST must be a non-loopback private IPv4 address.");
+            if (!string.Equals(patchUri.Host, gameHost, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The patch and game server hosts must use the same private IPv4 address for the LAN release.");
+        }
+
+        private static bool IsPrivateIpv4(string value)
+        {
+            if (!IPAddress.TryParse(value, out var address) || address.AddressFamily != AddressFamily.InterNetwork || IPAddress.IsLoopback(address))
+                return false;
+            var bytes = address.GetAddressBytes();
+            return bytes[0] == 10 ||
+                   bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31 ||
+                   bytes[0] == 192 && bytes[1] == 168;
         }
     }
 }
