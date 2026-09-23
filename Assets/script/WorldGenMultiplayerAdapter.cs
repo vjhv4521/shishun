@@ -53,7 +53,11 @@ namespace Haven.Gameplay
         private void OnSceneUnloaded(Scene scene)
         {
             if (scene.name == WorldSceneName)
+            {
+                if (PlayerData.IsTransientSession())
+                    PlayerData.EndTransientSession();
                 RestoreLobbyComponents();
+            }
         }
 
         private IEnumerator AdaptWhenReady(Scene worldScene)
@@ -64,16 +68,15 @@ namespace Haven.Gameplay
             if (!IsNetworkRoomActive())
                 yield break;
 
-            DisableLobbyGround();
+            DisableLobbyPresentation();
 
             foreach (var player in FindObjectsByType<PlayerCharacter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (player.gameObject.scene == worldScene)
+                if (player.gameObject.scene == worldScene && !player.GetComponent<NetworkSurvivalPlayerAdapter>())
                     player.gameObject.SetActive(false);
             }
 
 #if !UNITY_SERVER && !HAVEN_SERVER_BUILD
-            DisableLobbyCameraAndAudio();
             FishNetPlayerAvatar localAvatar = null;
             while (Time.realtimeSinceStartup < deadline && !localAvatar)
             {
@@ -106,9 +109,23 @@ namespace Haven.Gameplay
             return manager && manager.ServerManager.Started;
         }
 
-        private void DisableLobbyCameraAndAudio()
+        private void DisableLobbyPresentation()
         {
             RestoreLobbyComponents();
+            var lobby = SceneManager.GetSceneByName("FrameworkDemo");
+            if (lobby.IsValid() && lobby.isLoaded)
+            {
+                foreach (var root in lobby.GetRootGameObjects())
+                {
+                    if (root.name == "LobbyPresentation" && root.activeSelf)
+                    {
+                        root.SetActive(false);
+                        _disabledLobbyObjects.Add(root);
+                        return;
+                    }
+                }
+            }
+
             foreach (var camera in FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
                 if (camera.gameObject.scene.name == "FrameworkDemo" && camera.enabled)
@@ -131,21 +148,6 @@ namespace Haven.Gameplay
                 {
                     light.enabled = false;
                     _disabledLobbyComponents.Add(light);
-                }
-            }
-        }
-
-        private void DisableLobbyGround()
-        {
-            var lobby = SceneManager.GetSceneByName("FrameworkDemo");
-            if (!lobby.IsValid() || !lobby.isLoaded)
-                return;
-            foreach (var root in lobby.GetRootGameObjects())
-            {
-                if (root.name == "Server-authoritative Test Ground" && root.activeSelf)
-                {
-                    root.SetActive(false);
-                    _disabledLobbyObjects.Add(root);
                 }
             }
         }

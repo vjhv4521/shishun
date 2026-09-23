@@ -218,6 +218,14 @@ namespace SurvivalEngine
 
         public void EatItem(InventoryData inventory, int slot)
         {
+            Haven.Framework.Services.SurvivalCommand eatCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryAction);
+            eatCommand.SourceInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory);
+            eatCommand.SourceSlot = slot;
+            eatCommand.ActionId = "eat";
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, eatCommand))
+                return;
+
             InventoryItemData idata = inventory.GetInventoryItem(slot);
             ItemData item = ItemData.Get(idata?.item_id);
             if (item != null && item.type == ItemType.Consumable)
@@ -250,6 +258,14 @@ namespace SurvivalEngine
 
         public void DropItem(InventoryData inventory, int slot)
         {
+            Haven.Framework.Services.SurvivalCommand dropCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryAction);
+            dropCommand.SourceInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory);
+            dropCommand.SourceSlot = slot;
+            dropCommand.ActionId = "drop";
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, dropCommand))
+                return;
+
             InventoryItemData invdata = inventory?.GetInventoryItem(slot);
             ItemData idata = ItemData.Get(invdata?.item_id);
             if (invdata != null && idata != null && invdata.quantity > 0)
@@ -368,6 +384,14 @@ namespace SurvivalEngine
 
         public void EquipItem(InventoryData inventory, int islot)
         {
+            Haven.Framework.Services.SurvivalCommand equipCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryAction);
+            equipCommand.SourceInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory);
+            equipCommand.SourceSlot = islot;
+            equipCommand.ActionId = "equip";
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, equipCommand))
+                return;
+
             InventoryItemData item = inventory.GetInventoryItem(islot);
             ItemData idata = ItemData.Get(item?.item_id);
             if (idata != null && idata.type == ItemType.Equipment)
@@ -378,6 +402,14 @@ namespace SurvivalEngine
 
         public void UnequipItem(EquipSlot eslot)
         {
+            Haven.Framework.Services.SurvivalCommand unequipCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryAction);
+            unequipCommand.SourceInventory = Haven.Framework.Services.SurvivalInventoryKind.Equipment;
+            unequipCommand.SourceSlot = (int)eslot;
+            unequipCommand.ActionId = "unequip";
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, unequipCommand))
+                return;
+
             InventoryItemData invdata = EquipData.GetEquippedItem(eslot);
             ItemData idata = ItemData.Get(invdata?.item_id);
 
@@ -443,6 +475,15 @@ namespace SurvivalEngine
 
         public void UnequipItemTo(InventoryData inventory, EquipSlot eslot, int islot)
         {
+            Haven.Framework.Services.SurvivalCommand moveCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryMove);
+            moveCommand.SourceInventory = Haven.Framework.Services.SurvivalInventoryKind.Equipment;
+            moveCommand.TargetInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory);
+            moveCommand.SourceSlot = (int)eslot;
+            moveCommand.TargetSlot = islot;
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, moveCommand))
+                return;
+
             InventoryItemData invt_slot = inventory.GetInventoryItem(islot);
             InventoryItemData invt_equip = EquipData.GetEquippedItem(eslot);
             ItemData idata = ItemData.Get(invt_slot?.item_id);
@@ -550,11 +591,28 @@ namespace SurvivalEngine
 
         public void SwapItems(InventoryData inventory_data1, int slot1, InventoryData inventory_data2, int slot2)
         {
+            Haven.Framework.Services.SurvivalCommand moveCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryMove);
+            moveCommand.SourceInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory_data1);
+            moveCommand.TargetInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory_data2);
+            moveCommand.SourceSlot = slot1;
+            moveCommand.TargetSlot = slot2;
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, moveCommand))
+                return;
             PlayerData.Get().SwapInventoryItems(inventory_data1, slot1, inventory_data2, slot2);
         }
 
         public void CombineItems(InventoryData inventory_data1, int slot1, InventoryData inventory_data2, int slot2)
         {
+            Haven.Framework.Services.SurvivalCommand moveCommand = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.InventoryMove);
+            moveCommand.SourceInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory_data1);
+            moveCommand.TargetInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory_data2);
+            moveCommand.SourceSlot = slot1;
+            moveCommand.TargetSlot = slot2;
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, moveCommand))
+                return;
+
             InventoryItemData invdata1 = inventory_data1?.GetInventoryItem(slot1);
             InventoryItemData invdata2 = inventory_data2?.GetInventoryItem(slot2);
             ItemData idata1 = ItemData.Get(invdata1?.item_id);

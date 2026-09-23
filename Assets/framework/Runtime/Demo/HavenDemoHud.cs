@@ -115,6 +115,11 @@ namespace Haven.Framework.Demo
         private void Update()
         {
             ObserveBootstrap(GameBootstrap.Instance);
+            if (_room.Phase == RoomPhase.InGame)
+            {
+                ClearGameplayVisuals();
+                return;
+            }
             EnsureGameplayBinding();
             if (_room.Phase == RoomPhase.InGame && _gameplayService != null &&
                 !_gameplay.HasState && !_gameplayBusy && !_gameplayRefreshRequested)
@@ -146,8 +151,6 @@ namespace Haven.Framework.Demo
 
             if (_room.Phase == RoomPhase.InGame)
             {
-                DrawInGamePanel();
-                DrawGameplayPanel();
                 return;
             }
 

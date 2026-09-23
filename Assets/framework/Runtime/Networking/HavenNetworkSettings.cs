@@ -20,7 +20,7 @@ namespace Haven.Networking
         [SerializeField, Range(2, 4)] private int maximumPlayers = 4;
         [SerializeField, Range(5, 16)] private int maximumConnections = 8;
         [SerializeField, Range(2, 4)] private int minimumPlayers = 2;
-        [SerializeField, Min(1)] private int protocolVersion = 3;
+        [SerializeField, Min(1)] private int protocolVersion = 4;
         [SerializeField, Min(1f)] private float connectTimeoutSeconds = 10f;
         [SerializeField, Min(1f)] private float roomRequestTimeoutSeconds = 10f;
         [SerializeField, Min(5f)] private float roomLoadTimeoutSeconds = 30f;

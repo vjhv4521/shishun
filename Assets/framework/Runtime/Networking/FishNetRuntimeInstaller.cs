@@ -20,7 +20,7 @@ namespace Haven.Networking
         private FrameworkContext _context;
         private FishNetNetworkService _service;
         private FishNetRoomService _roomService;
-        private FishNetGameplayService _gameplayService;
+        private ICoopGameplayService _gameplayService;
 
         public int Order => 100;
         public HavenNetworkSettings Settings => settings;
@@ -63,12 +63,13 @@ namespace Haven.Networking
             FindAnyObjectByType<HavenDemoHud>()?.SetDefaultEndpoint(settings.DefaultHost, settings.Port);
             _service = new FishNetNetworkService(context, networkManager, settings, authenticator);
             _roomService = new FishNetRoomService(context, networkManager, settings, this, playerPrefab);
-            _gameplayService = new FishNetGameplayService(context, networkManager, settings, _roomService, this);
+            _gameplayService = new SurvivalCoopGameplayFacade(_service);
             context.Services.Register<INetworkService>(_service);
             context.Services.Register<INetworkHostService>(_service);
             context.Services.Register<ILLMService>(_service);
             context.Services.Register<IRoomService>(_roomService);
             context.Services.Register<ICoopGameplayService>(_gameplayService);
+            context.Services.Register<ISurvivalSessionService>(_service);
 
 #if (UNITY_SERVER || HAVEN_SERVER_BUILD) && !UNITY_EDITOR
             // Dedicated players have no local client or menu to start the transport.
@@ -85,13 +86,15 @@ namespace Haven.Networking
         {
             if (_context != null)
             {
+                _context.Services.Remove<ISurvivalSessionService>(false);
                 _context.Services.Remove<ICoopGameplayService>(false);
                 _context.Services.Remove<IRoomService>(false);
                 _context.Services.Remove<ILLMService>(false);
                 _context.Services.Remove<INetworkHostService>(false);
                 _context.Services.Remove<INetworkService>(false);
             }
-            _gameplayService?.Dispose();
+            if (_gameplayService is IDisposable disposableGameplay)
+                disposableGameplay.Dispose();
             _roomService?.Dispose();
             _service?.Dispose();
             _gameplayService = null;
@@ -102,7 +105,6 @@ namespace Haven.Networking
 
         private void Update()
         {
-            _gameplayService?.Tick(Time.realtimeSinceStartup, Time.deltaTime);
         }
 
         public void Configure(NetworkManager manager, HavenNetworkSettings networkSettings, NetworkObject networkPlayerPrefab)

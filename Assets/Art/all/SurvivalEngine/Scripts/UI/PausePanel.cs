@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using Haven.Framework.Bootstrap;
+using Haven.Framework.Services;
 using Haven.Framework.Scenes;
 using Haven.Networking;
 using UnityEngine;
@@ -46,11 +47,15 @@ namespace SurvivalEngine
 
         public void OnClickSave()
         {
+            if (PlayerData.IsTransientSession())
+                return;
             TheGame.Get().Save();
         }
 
         public void OnClickLoad()
         {
+            if (PlayerData.IsTransientSession())
+                return;
             if (PlayerData.HasLastSave())
                 StartCoroutine(LoadRoutine());
             else
@@ -59,23 +64,46 @@ namespace SurvivalEngine
 
         public void OnClickNew()
         {
+            if (PlayerData.IsTransientSession())
+                return;
             StartCoroutine(NewRoutine());
         }
 
         public void OnClickQuit()
+        {
+            StartCoroutine(QuitRoutine());
+        }
+
+        private IEnumerator QuitRoutine()
         {
             var settings = Resources.Load<HavenNetworkSettings>(HavenNetworkSettings.DefaultResourceName);
             var menuScene = settings != null ? settings.MenuSceneName : "MainMenu";
             if (!Application.CanStreamedLevelBeLoaded(menuScene))
             {
                 Debug.LogError($"[Haven] Main menu scene is not available in Build Settings: {menuScene}");
-                return;
+                yield break;
             }
 
             var game = TheGame.Get();
             if (game != null)
                 game.Unpause();
 
+            var context = GameBootstrap.Instance?.Context;
+            if (context != null && context.Services.TryResolve<ISurvivalSessionService>(out var survival))
+                survival.ClearSession();
+            if (context != null && context.Services.TryResolve<IRoomService>(out var room) && room.Current.HasRoom)
+            {
+                bool completed = false;
+                yield return room.LeaveRoom(_ => completed = true);
+                if (!completed)
+                    Debug.LogWarning("[Haven] Leave-room request ended without a response; disconnecting anyway.");
+            }
+            if (context != null && context.Services.TryResolve<INetworkHostService>(out var host) && host.IsHosting)
+                host.StopHost();
+            else if (context != null && context.Services.TryResolve<INetworkService>(out var network))
+                network.Disconnect();
+
+            PlayerData.EndTransientSession();
             GameBootstrap.Instance?.PrepareForSceneTransition();
             var transition = SceneTransitionService.LoadScene(menuScene);
             if (!transition.Succeeded && transition.IsDone)

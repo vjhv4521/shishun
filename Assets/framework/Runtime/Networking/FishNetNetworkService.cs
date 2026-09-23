@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Haven.Networking
 {
-    internal sealed class FishNetNetworkService : INetworkService, INetworkHostService, ILLMService, IDisposable
+    internal sealed class FishNetNetworkService : INetworkService, INetworkHostService, ILLMService, ISurvivalSessionService, IDisposable
     {
         private readonly FrameworkContext _context;
         private readonly NetworkManager _manager;
@@ -64,6 +64,7 @@ namespace Haven.Networking
         public NetworkEndpoint ShareEndpoint { get; private set; }
         public int MaximumPlayers => _settings.MaximumPlayers;
         public FrameworkError LastError { get; private set; }
+        public SurvivalSnapshot Current { get; private set; } = SurvivalSnapshot.Empty;
 
         public IEnumerator StartHost(NetworkEndpoint endpoint, Action<FrameworkResult> completed)
         {
@@ -168,15 +169,59 @@ namespace Haven.Networking
             yield return _localPlayer.RequestQuest(request, completed);
         }
 
+        public bool Submit(SurvivalCommand command)
+        {
+            return _localPlayer && _localPlayer.Submit(command);
+        }
+
+        public IEnumerator Refresh(Action<FrameworkResult<SurvivalSnapshot>> completed)
+        {
+            if (!_localPlayer || !_localPlayer.RequestSurvivalRefresh())
+            {
+                completed?.Invoke(FrameworkResult<SurvivalSnapshot>.Failure(new FrameworkError(
+                    GameplayErrorCodes.NotConnected, "生存会话尚未连接。", "SurvivalSession", true)));
+                yield break;
+            }
+
+            var previousRevision = Current.Revision;
+            var deadline = Time.realtimeSinceStartup + _settings.RoomRequestTimeoutSeconds;
+            while (_localPlayer && Current.Revision <= previousRevision && Time.realtimeSinceStartup < deadline)
+                yield return null;
+
+            if (Current.Revision > previousRevision)
+                completed?.Invoke(FrameworkResult<SurvivalSnapshot>.Success(Current));
+            else
+                completed?.Invoke(FrameworkResult<SurvivalSnapshot>.Failure(new FrameworkError(
+                    GameplayErrorCodes.RequestTimeout, "请求完整生存状态超时。", "SurvivalSession", true)));
+        }
+
+        public void ClearSession()
+        {
+            Current = SurvivalSnapshot.Empty;
+            _localPlayer?.ClearSurvivalClientState();
+            _context.Events.Publish(new SurvivalSnapshotChanged(Current));
+        }
+
         internal void AttachLocalPlayer(FishNetPlayerAvatar player)
         {
+            if (_localPlayer)
+                UnsubscribeLocalPlayer(_localPlayer);
             _localPlayer = player;
+            if (_localPlayer)
+            {
+                _localPlayer.SurvivalSnapshotReceived += OnSurvivalSnapshot;
+                _localPlayer.SurvivalCommandResultReceived += OnSurvivalCommandResult;
+            }
         }
 
         internal void DetachLocalPlayer(FishNetPlayerAvatar player)
         {
             if (_localPlayer == player)
+            {
+                UnsubscribeLocalPlayer(_localPlayer);
                 _localPlayer = null;
+                Current = SurvivalSnapshot.Empty;
+            }
         }
 
         public void Dispose()
@@ -191,7 +236,10 @@ namespace Haven.Networking
                 _authenticator.OnClientAuthenticationResult -= OnClientAuthenticationResult;
                 StopConnections();
             }
+            if (_localPlayer)
+                UnsubscribeLocalPlayer(_localPlayer);
             _localPlayer = null;
+            Current = SurvivalSnapshot.Empty;
             ConnectedEndpoint = default;
             ShareEndpoint = default;
             ForceState(NetworkState.Disconnected, "Network service disposed.");
@@ -346,6 +394,23 @@ namespace Haven.Networking
         private static FrameworkResult Failure(string code, string message, bool retryable)
         {
             return FrameworkResult.Failure(new FrameworkError(code, message, "FishNet", retryable));
+        }
+
+        private void OnSurvivalSnapshot(SurvivalSnapshot snapshot)
+        {
+            Current = snapshot;
+        }
+
+        private void OnSurvivalCommandResult(SurvivalCommandCompleted result)
+        {
+            if (!result.Succeeded)
+                GameLog.Warning("SurvivalSession", result.Message, result.ErrorCode);
+        }
+
+        private void UnsubscribeLocalPlayer(FishNetPlayerAvatar player)
+        {
+            player.SurvivalSnapshotReceived -= OnSurvivalSnapshot;
+            player.SurvivalCommandResultReceived -= OnSurvivalCommandResult;
         }
     }
 }

@@ -56,7 +56,7 @@ Shader "FX/Grass"
             #pragma exclude_renderers gles gles3 glcore
 
             #define SURVIVAL_GRASS_FORWARD_PASS 1
-            #include "Assets/SurvivalEngine/Materials/FX/GrassPass.hlsl"
+            #include "Assets/Art/all/SurvivalEngine/Materials/FX/GrassPass.hlsl"
             ENDHLSL
         }
 
@@ -79,7 +79,7 @@ Shader "FX/Grass"
             #pragma exclude_renderers gles gles3 glcore
 
             #define SURVIVAL_GRASS_SHADOW_PASS 1
-            #include "Assets/SurvivalEngine/Materials/FX/GrassPass.hlsl"
+            #include "Assets/Art/all/SurvivalEngine/Materials/FX/GrassPass.hlsl"
             ENDHLSL
         }
     }

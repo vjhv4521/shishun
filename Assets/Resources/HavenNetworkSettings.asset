@@ -18,7 +18,7 @@ MonoBehaviour:
   maximumPlayers: 4
   maximumConnections: 8
   minimumPlayers: 2
-  protocolVersion: 3
+  protocolVersion: 4
   connectTimeoutSeconds: 10
   roomRequestTimeoutSeconds: 10
   roomLoadTimeoutSeconds: 30

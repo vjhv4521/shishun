@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Haven.Framework.CampQuests;
+using Haven.Framework.Bootstrap;
 using Haven.Framework.Core;
+using Haven.Framework.Services;
 using SurvivalEngine;
 using UnityEngine;
 
@@ -60,6 +62,25 @@ namespace Haven.Camp
                 return Failure("STALE", "请在当前存档中走到管事身边再试。");
             var data = PlayerData.Get();
             var inventory = PlayerCharacter.GetFirst().Inventory;
+            if (PlayerData.IsTransientSession())
+            {
+                var context = GameBootstrap.Instance?.Context;
+                if (context == null || !context.Services.TryResolve<ISurvivalSessionService>(out var session))
+                    return Failure("NOT_READY", "联机生存会话尚未准备完成。");
+                var command = SurvivalCommand.Create(SurvivalCommandType.QuestAction);
+                command.ActionId = exchange == null ? "save" : "deliver";
+                command.TargetUid = saveJson ?? string.Empty;
+                if (exchange != null)
+                {
+                    command.DataId = exchange.itemId;
+                    command.Quantity = exchange.quantity;
+                    command.SourceSlot = exchange.rewardQuantity;
+                    command.TargetSlot = exchange.rewardId == "bread" ? 1 : 0;
+                }
+                return session.Submit(command)
+                    ? FrameworkResult.Success()
+                    : Failure("NOT_READY", "房主未接受本次营地委托操作，请稍后重试。");
+            }
             var main = inventory.InventoryData;
             var bag = inventory.BagData;
             var mainBefore = main.items;

@@ -13,15 +13,27 @@ using UnityEngine.InputSystem.Controls;
 namespace Haven.Networking
 {
     [DisallowMultipleComponent]
-    public sealed class FishNetPlayerAvatar : NetworkBehaviour
+    public sealed class FishNetPlayerAvatar : NetworkBehaviour, ISurvivalCommandRouter
     {
         private readonly Dictionary<string, Action<FrameworkResult<AiQuestResponse>>> _pending = new Dictionary<string, Action<FrameworkResult<AiQuestResponse>>>();
+        private readonly Dictionary<string, float> _processedSurvivalRequests = new Dictionary<string, float>();
         private GatewayQuestClient _gateway;
         private HavenNetworkSettings _settings;
-        private Vector2 _serverInput;
-        private Vector2 _lastSentInput;
+        private INetworkPlayerSimulation _simulation;
+        private Vector3 _serverInput;
+        private Vector3 _lastSentInput;
         private float _nextInputSendAt;
         private float _nextAiRequestAt;
+        private float _nextSurvivalSnapshotAt;
+        private float _nextPublicStateAt;
+        private long _survivalRevision;
+        private bool _executingSurvivalCommand;
+
+        internal event Action<SurvivalSnapshot> SurvivalSnapshotReceived;
+        internal event Action<SurvivalCommandCompleted> SurvivalCommandResultReceived;
+
+        public bool ShouldRouteCommands => !_executingSurvivalCommand && IsOwner && IsClientStarted &&
+                                           _simulation != null && _simulation.IsReady;
 
         public override void OnStartNetwork()
         {
@@ -29,6 +41,7 @@ namespace Haven.Networking
             _settings = Resources.Load<HavenNetworkSettings>(HavenNetworkSettings.DefaultResourceName) ?? HavenNetworkSettings.CreateRuntimeDefault();
             if (IsServerStarted)
                 _gateway = new GatewayQuestClient(_settings);
+            EnsureSimulation();
         }
 
         public override void OnStartClient()
@@ -48,12 +61,60 @@ namespace Haven.Networking
             base.OnStopClient();
         }
 
+        public override void OnStopNetwork()
+        {
+            _simulation?.ShutdownNetworkRole();
+            _simulation = null;
+            _processedSurvivalRequests.Clear();
+            base.OnStopNetwork();
+        }
+
         private void Update()
         {
+            EnsureSimulation();
             if (IsOwner)
                 SendLocalInput();
             if (IsServerStarted)
-                ApplyServerMovement();
+            {
+                _simulation?.ApplyServerMovement(_serverInput);
+                SendSurvivalState();
+            }
+        }
+
+        public bool Submit(SurvivalCommand command)
+        {
+            if (!ShouldRouteCommands)
+                return false;
+            if (string.IsNullOrWhiteSpace(command.RequestId))
+                command.RequestId = Guid.NewGuid().ToString("N");
+            ServerSubmitSurvivalCommand(
+                command.RequestId,
+                (byte)command.Type,
+                command.TargetUid ?? string.Empty,
+                command.DataId ?? string.Empty,
+                command.ActionId ?? string.Empty,
+                (byte)command.SourceInventory,
+                (byte)command.TargetInventory,
+                command.SourceSlot,
+                command.TargetSlot,
+                command.Quantity,
+                command.Position,
+                command.Rotation,
+                _settings.ProtocolVersion);
+            return true;
+        }
+
+        internal bool RequestSurvivalRefresh()
+        {
+            if (!ShouldRouteCommands)
+                return false;
+            ServerRequestSurvivalSnapshot(_settings.ProtocolVersion);
+            return true;
+        }
+
+        internal void ClearSurvivalClientState()
+        {
+            SurvivalSnapshotReceived?.Invoke(SurvivalSnapshot.Empty);
         }
 
         internal IEnumerator RequestQuest(AiQuestRequest request, Action<FrameworkResult<AiQuestResponse>> completed)
@@ -101,31 +162,212 @@ namespace Haven.Networking
                 ReadAxis(keyboard.aKey, keyboard.dKey),
                 ReadAxis(keyboard.sKey, keyboard.wKey));
             input = Vector2.ClampMagnitude(input, 1f);
-            if ((input - _lastSentInput).sqrMagnitude > 0.0001f || input.sqrMagnitude > 0f)
+            var movement = CameraRelative(input);
+            if ((movement - _lastSentInput).sqrMagnitude > 0.0001f || movement.sqrMagnitude > 0f)
             {
-                ServerSetInput(input, _settings.ProtocolVersion);
-                _lastSentInput = input;
+                ServerSetInput(movement, _settings.ProtocolVersion);
+                _lastSentInput = movement;
             }
             _nextInputSendAt = Time.unscaledTime + _settings.InputSendInterval;
         }
 
-        private void ApplyServerMovement()
+        private Vector3 CameraRelative(Vector2 input)
         {
-            var movement = new Vector3(_serverInput.x, 0f, _serverInput.y);
-            if (movement.sqrMagnitude > 1f)
-                movement.Normalize();
-            transform.position += movement * (_settings.PlayerMoveSpeed * Time.deltaTime);
+            var camera = Camera.main;
+            var forward = camera ? camera.transform.forward : Vector3.forward;
+            var right = camera ? camera.transform.right : Vector3.right;
+            forward.y = 0f;
+            right.y = 0f;
+            forward.Normalize();
+            right.Normalize();
+            return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
         }
 
         [ServerRpc]
-        private void ServerSetInput(Vector2 input, int protocolVersion)
+        private void ServerSetInput(Vector3 input, int protocolVersion)
         {
             if (protocolVersion != _settings.ProtocolVersion)
             {
                 _serverInput = Vector2.zero;
                 return;
             }
-            _serverInput = Vector2.ClampMagnitude(input, 1f);
+            input.y = 0f;
+            _serverInput = Vector3.ClampMagnitude(input, 1f);
+        }
+
+        [ServerRpc]
+        private void ServerSubmitSurvivalCommand(
+            string requestId,
+            byte commandType,
+            string targetUid,
+            string dataId,
+            string actionId,
+            byte sourceInventory,
+            byte targetInventory,
+            int sourceSlot,
+            int targetSlot,
+            int quantity,
+            Vector3 position,
+            Quaternion rotation,
+            int protocolVersion)
+        {
+            if (protocolVersion != _settings.ProtocolVersion)
+            {
+                TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.ProtocolMismatch,
+                    "客户端与房主的玩法协议版本不一致。");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(requestId) || _processedSurvivalRequests.ContainsKey(requestId))
+            {
+                TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.DuplicateRequest,
+                    "该操作已经处理，未重复结算。");
+                return;
+            }
+
+            _processedSurvivalRequests[requestId] = Time.unscaledTime;
+            PruneProcessedRequests();
+            EnsureSimulation();
+            if (_simulation == null || !_simulation.IsReady)
+            {
+                TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.NotInGame,
+                    "生存世界尚未准备完成。");
+                return;
+            }
+
+            var command = new SurvivalCommand
+            {
+                RequestId = requestId,
+                Type = (SurvivalCommandType)commandType,
+                TargetUid = targetUid,
+                DataId = dataId,
+                ActionId = actionId,
+                SourceInventory = (SurvivalInventoryKind)sourceInventory,
+                TargetInventory = (SurvivalInventoryKind)targetInventory,
+                SourceSlot = sourceSlot,
+                TargetSlot = targetSlot,
+                Quantity = quantity,
+                Position = position,
+                Rotation = rotation
+            };
+            _executingSurvivalCommand = true;
+            var succeeded = false;
+            var errorCode = GameplayErrorCodes.InvalidRequest;
+            var message = "房主未能执行该操作。";
+            try
+            {
+                succeeded = _simulation.ExecuteServerCommand(command, out errorCode, out message);
+            }
+            finally
+            {
+                _executingSurvivalCommand = false;
+            }
+            TargetSurvivalCommandResult(Owner, requestId, succeeded, errorCode, message);
+            if (succeeded)
+                SendSnapshotToOwner();
+        }
+
+        [ServerRpc]
+        private void ServerRequestSurvivalSnapshot(int protocolVersion)
+        {
+            if (protocolVersion == _settings.ProtocolVersion)
+                SendSnapshotToOwner();
+        }
+
+        [TargetRpc]
+        private void TargetSurvivalCommandResult(NetworkConnection connection, string requestId, bool succeeded,
+            string errorCode, string message)
+        {
+            var result = new SurvivalCommandCompleted(requestId, succeeded, errorCode, message);
+            SurvivalCommandResultReceived?.Invoke(result);
+            GameBootstrap.Instance?.Context?.Events.Publish(result);
+        }
+
+        [TargetRpc]
+        private void TargetSurvivalSnapshot(NetworkConnection connection, string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+            var snapshot = JsonUtility.FromJson<SurvivalSnapshot>(json);
+            if (!snapshot.HasState)
+                return;
+            _simulation?.ApplySnapshot(snapshot);
+            SurvivalSnapshotReceived?.Invoke(snapshot);
+            GameBootstrap.Instance?.Context?.Events.Publish(new SurvivalSnapshotChanged(snapshot));
+        }
+
+        [ObserversRpc(BufferLast = true)]
+        private void ObserversApplyPublicState(int playerId, Vector3 position, Quaternion rotation,
+            bool isMoving, bool isBusy, bool isDead, string equippedItemId)
+        {
+            if (IsServerStarted)
+                return;
+            _simulation?.ApplyPublicState(new SurvivalPublicPlayerSnapshot
+            {
+                PlayerId = playerId,
+                Position = position,
+                Rotation = rotation,
+                IsMoving = isMoving,
+                IsBusy = isBusy,
+                IsDead = isDead,
+                EquippedItemId = equippedItemId
+            });
+        }
+
+        private void SendSurvivalState()
+        {
+            if (_simulation == null || !_simulation.IsReady)
+                return;
+            if (Time.unscaledTime >= _nextPublicStateAt)
+            {
+                _nextPublicStateAt = Time.unscaledTime + _settings.InputSendInterval;
+                var state = _simulation.CapturePublicState();
+                ObserversApplyPublicState(state.PlayerId, state.Position, state.Rotation, state.IsMoving,
+                    state.IsBusy, state.IsDead, state.EquippedItemId ?? string.Empty);
+            }
+            if (Time.unscaledTime >= _nextSurvivalSnapshotAt)
+            {
+                _nextSurvivalSnapshotAt = Time.unscaledTime + 0.25f;
+                SendSnapshotToOwner();
+            }
+        }
+
+        private void SendSnapshotToOwner()
+        {
+            if (!IsServerStarted || Owner == null || !Owner.IsActive || _simulation == null || !_simulation.IsReady)
+                return;
+            var snapshot = _simulation.CaptureSnapshot(++_survivalRevision);
+            TargetSurvivalSnapshot(Owner, JsonUtility.ToJson(snapshot));
+        }
+
+        private void EnsureSimulation()
+        {
+            if (_simulation != null)
+                return;
+            foreach (var behaviour in GetComponents<MonoBehaviour>())
+            {
+                if (behaviour is INetworkPlayerSimulation simulation)
+                {
+                    _simulation = simulation;
+                    var playerId = Owner != null ? Owner.ClientId : -1;
+                    _simulation.InitializeNetworkRole(IsServerStarted, IsOwner, playerId, this);
+                    break;
+                }
+            }
+        }
+
+        private void PruneProcessedRequests()
+        {
+            if (_processedSurvivalRequests.Count < 256)
+                return;
+            var cutoff = Time.unscaledTime - 120f;
+            var stale = new List<string>();
+            foreach (var pair in _processedSurvivalRequests)
+            {
+                if (pair.Value < cutoff)
+                    stale.Add(pair.Key);
+            }
+            foreach (var requestId in stale)
+                _processedSurvivalRequests.Remove(requestId);
         }
 
         [ServerRpc]

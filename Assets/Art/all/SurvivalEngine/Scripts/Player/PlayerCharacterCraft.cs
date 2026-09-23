@@ -197,6 +197,15 @@ namespace SurvivalEngine
 
         public void StartCraftingOrBuilding(CraftData data)
         {
+            if (data != null && data.GetConstruction() == null && data.GetPlant() == null && data.GetCharacter() == null)
+            {
+                Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
+                    Haven.Framework.Services.SurvivalCommandType.Craft);
+                command.DataId = data.id;
+                if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, command))
+                    return;
+            }
+
             if (CanCraft(data))
             {
                 ConstructionData construct = data.GetConstruction();
@@ -386,6 +395,20 @@ namespace SurvivalEngine
         //Order to move to and build there
         public void BuildMoveAt(Vector3 pos)
         {
+            if (current_build_data != null)
+            {
+                Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
+                    Haven.Framework.Services.SurvivalCommandType.Build);
+                command.DataId = current_build_data.id;
+                command.Position = pos;
+                command.Rotation = current_buildable != null ? current_buildable.transform.rotation : Quaternion.identity;
+                if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, command))
+                {
+                    CancelBuilding();
+                    return;
+                }
+            }
+
             bool in_range = character.interact_type == PlayerInteractBehavior.MoveAndInteract || IsInBuildRange();
             if (!in_range)
                 return;

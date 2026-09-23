@@ -32,6 +32,7 @@ namespace SurvivalEngine
         private bool scene_transition = false;
         private float game_speed = 1f;
         private float game_speed_per_sec = 0.002f;
+        private bool world_authority = true;
 
         private static TheGame _instance;
 
@@ -39,7 +40,12 @@ namespace SurvivalEngine
         {
             _instance = this;
             Application.targetFrameRate = 120;
-            PlayerData.LoadLast();
+            bool multiplayer = Haven.Gameplay.SurvivalMultiplayerRuntime.IsActive();
+            if (multiplayer)
+                PlayerData.BeginTransientSession("haven-multiplayer-session");
+            else
+                PlayerData.LoadLast();
+            world_authority = !multiplayer || Haven.Gameplay.SurvivalMultiplayerRuntime.IsHostAuthority();
         }
 
         private void Start()
@@ -145,6 +151,9 @@ namespace SurvivalEngine
         void Update()
         {
             if (IsPaused())
+                return;
+
+            if (!world_authority)
                 return;
 
             //Check if dead
@@ -361,6 +370,11 @@ namespace SurvivalEngine
         public bool IsPausedByScript()
         {
             return paused_by_script;
+        }
+
+        public bool IsWorldAuthority()
+        {
+            return world_authority;
         }
 
         //-- Scene transition -----

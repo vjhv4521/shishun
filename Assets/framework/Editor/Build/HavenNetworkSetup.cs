@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using FishNet.Component.Spawning;
 using FishNet.Component.Transforming;
@@ -17,11 +18,34 @@ namespace Haven.Framework.Editor
 {
     public static class HavenNetworkSetup
     {
+        private const string AutoRefreshSessionKey = "Haven.Network.SurvivalPrefabRefresh.v4";
         public const string ScenePath = "Assets/Scenes/FrameworkDemo.unity";
         public const string WorldScenePath = "Assets/Scenes/WorldGenMap.unity";
         public const string PlayerPrefabPath = "Assets/Prefabs/Network/HavenPlayer.prefab";
+        public const string SurvivalPlayerPrefabPath = "Assets/Art/all/SurvivalEngine/Prefabs/PlayerCharacter.prefab";
         public const string NetworkSettingsPath = "Assets/Resources/HavenNetworkSettings.asset";
         private const string DefaultPrefabsPath = "Assets/DefaultPrefabObjects.asset";
+
+        [InitializeOnLoadMethod]
+        private static void RefreshStaleDemoAfterCompile()
+        {
+            if (SessionState.GetBool(AutoRefreshSessionKey, false))
+                return;
+            SessionState.SetBool(AutoRefreshSessionKey, true);
+            EditorApplication.delayCall += () =>
+            {
+                if (EditorApplication.isCompiling || EditorApplication.isPlayingOrWillChangePlaymode)
+                    return;
+                var simulationType = Type.GetType("Haven.Gameplay.NetworkSurvivalPlayerAdapter, Assembly-CSharp");
+                if (simulationType == null)
+                    return;
+                var player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+                var stalePlayer = !player || player.GetComponent(simulationType) == null;
+                var staleScene = File.Exists(ScenePath) && File.ReadAllText(ScenePath).Contains("Server-authoritative Test Ground");
+                if (stalePlayer || staleScene)
+                    CreateOrRefreshDemo();
+            };
+        }
 
         [MenuItem("Haven/Network/1. Create or Refresh Demo")]
         public static void CreateOrRefreshDemo()
@@ -60,14 +84,25 @@ namespace Haven.Framework.Editor
                 !player.TryGetComponent<FishNetPlayerAvatar>(out _) ||
                 !player.TryGetComponent<NetworkTransform>(out _))
                 throw new InvalidOperationException("HavenPlayer prefab is missing required FishNet components.");
+            var simulationType = Type.GetType("Haven.Gameplay.NetworkSurvivalPlayerAdapter, Assembly-CSharp");
+            if (simulationType == null || player.GetComponent(simulationType) == null)
+                throw new InvalidOperationException("HavenPlayer prefab is missing the SurvivalEngine network adapter.");
+            foreach (var renderer in player.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var material in renderer.sharedMaterials)
+                {
+                    if (!material || !material.shader || !material.shader.isSupported || material.shader.name == "Hidden/InternalErrorShader")
+                        throw new InvalidOperationException($"HavenPlayer renderer '{renderer.name}' has a missing or unsupported material shader.");
+                }
+            }
             if (!prefabs.Prefabs.Contains(networkObject))
                 throw new InvalidOperationException("HavenPlayer is not registered in FishNet DefaultPrefabObjects.");
             if (!EditorBuildSettings.scenes.Any(item => item.enabled && item.path == ScenePath))
                 throw new InvalidOperationException("FrameworkDemo scene is not enabled in build settings.");
             if (!EditorBuildSettings.scenes.Any(item => item.enabled && item.path == WorldScenePath))
                 throw new InvalidOperationException("WorldGenMap scene is not enabled in build settings.");
-            if (settings.ProtocolVersion != 3)
-                throw new InvalidOperationException("Room protocol version must be 3.");
+            if (settings.ProtocolVersion != 4)
+                throw new InvalidOperationException("Room protocol version must be 4.");
             if (settings.MaximumConnections <= settings.MaximumPlayers)
                 throw new InvalidOperationException("Transport capacity must exceed room capacity so full-room errors can be returned.");
 
@@ -93,12 +128,42 @@ namespace Haven.Framework.Editor
 
         private static GameObject EnsurePlayerPrefab()
         {
-            var root = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(SurvivalPlayerPrefabPath);
+            if (!source)
+                throw new InvalidOperationException($"Survival player prefab is missing: {SurvivalPlayerPrefabPath}");
+
+            var root = PrefabUtility.InstantiatePrefab(source) as GameObject;
+            if (!root)
+                throw new InvalidOperationException("Could not instantiate the SurvivalEngine player prefab.");
             root.name = "HavenPlayer";
             root.transform.position = new Vector3(0f, 1f, 0f);
+            var gameplayBehaviours = root.GetComponentsInChildren<MonoBehaviour>(true)
+                .Where(behaviour => behaviour && behaviour.enabled).ToArray();
+            foreach (var behaviour in gameplayBehaviours)
+                behaviour.enabled = false;
+
             root.AddComponent<NetworkObject>();
             var networkTransform = root.AddComponent<NetworkTransform>();
             root.AddComponent<FishNetPlayerAvatar>();
+
+            var simulationType = Type.GetType("Haven.Gameplay.NetworkSurvivalPlayerAdapter, Assembly-CSharp");
+            if (simulationType == null || !typeof(MonoBehaviour).IsAssignableFrom(simulationType))
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                throw new InvalidOperationException("NetworkSurvivalPlayerAdapter has not compiled into Assembly-CSharp.");
+            }
+            var simulation = root.AddComponent(simulationType) as MonoBehaviour;
+            simulationType.GetMethod("ConfigureGameplayBehaviours")?.Invoke(simulation, new object[] { gameplayBehaviours });
+            simulation.enabled = true;
+
+            var body = root.GetComponent<Rigidbody>();
+            if (body)
+            {
+                body.isKinematic = true;
+                body.detectCollisions = false;
+            }
+            foreach (var collider in root.GetComponentsInChildren<Collider>(true))
+                collider.enabled = false;
 
             var transformSettings = new SerializedObject(networkTransform);
             transformSettings.FindProperty("_clientAuthoritative").boolValue = false;
@@ -106,10 +171,6 @@ namespace Haven.Framework.Editor
             transformSettings.FindProperty("_synchronizeRotation").boolValue = false;
             transformSettings.FindProperty("_synchronizeScale").boolValue = false;
             transformSettings.ApplyModifiedPropertiesWithoutUndo();
-
-            var renderer = root.GetComponent<Renderer>();
-            if (renderer)
-                renderer.sharedMaterial = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Material.mat");
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
             UnityEngine.Object.DestroyImmediate(root);
@@ -158,7 +219,10 @@ namespace Haven.Framework.Editor
                 spawner.Spawns[index] = spawn;
             }
 
+            var presentation = new GameObject("LobbyPresentation");
+
             var cameraObject = new GameObject("Main Camera");
+            cameraObject.transform.SetParent(presentation.transform);
             cameraObject.tag = "MainCamera";
             var camera = cameraObject.AddComponent<Camera>();
             cameraObject.AddComponent<AudioListener>();
@@ -166,16 +230,15 @@ namespace Haven.Framework.Editor
             camera.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
 
             var lightObject = new GameObject("Directional Light");
+            lightObject.transform.SetParent(presentation.transform);
             var light = lightObject.AddComponent<Light>();
             light.type = LightType.Directional;
             light.intensity = 1.2f;
             lightObject.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Server-authoritative Test Ground";
-            ground.transform.localScale = new Vector3(2f, 1f, 2f);
-
-            new GameObject("Demo HUD").AddComponent<HavenDemoHud>();
+            var hud = new GameObject("Demo HUD");
+            hud.transform.SetParent(presentation.transform);
+            hud.AddComponent<HavenDemoHud>();
 
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene, ScenePath))

@@ -248,6 +248,9 @@ namespace SurvivalEngine {
 
         public static PlayerUI Get(int player_id=0)
         {
+            PlayerCharacter local = Haven.Gameplay.SurvivalMultiplayerRuntime.GetLocalPlayer();
+            if (local != null && player_id == local.player_id)
+                player_id = 0;
             foreach (PlayerUI ui in ui_list)
             {
                 if (ui.player_id == player_id)

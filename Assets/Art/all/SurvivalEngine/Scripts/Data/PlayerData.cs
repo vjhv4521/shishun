@@ -53,6 +53,7 @@ namespace SurvivalEngine
 
         private static string file_loaded = "";
         private static PlayerData player_data = null;
+        private static bool transient_session = false;
 
         public const string last_save_id = "last_save_survival";
         public const string extension = ".survival";
@@ -606,6 +607,11 @@ namespace SurvivalEngine
         public static bool TrySave(string filename, PlayerData data, out string error)
         {
             error = null;
+            if (transient_session)
+            {
+                error = "Multiplayer session data is temporary and cannot be written to disk.";
+                return false;
+            }
             if (string.IsNullOrEmpty(filename) || data == null)
             {
                 error = "Missing world save filename or data.";
@@ -629,6 +635,7 @@ namespace SurvivalEngine
         //You should reload the scene right after NewGame
         public static PlayerData NewGame(string filename)
         {
+            transient_session = false;
             file_loaded = filename;
             player_data = new PlayerData(filename);
             player_data.FixData();
@@ -637,6 +644,7 @@ namespace SurvivalEngine
 
         public static PlayerData Load(string filename)
         {
+            transient_session = false;
             if (player_data == null || file_loaded != filename)
             {
                 player_data = SaveTool.LoadFile<PlayerData>(filename + extension);
@@ -694,6 +702,28 @@ namespace SurvivalEngine
         {
             player_data = null;
             file_loaded = "";
+            transient_session = false;
+        }
+
+        public static PlayerData BeginTransientSession(string sessionId)
+        {
+            transient_session = true;
+            file_loaded = "";
+            player_data = new PlayerData(string.IsNullOrWhiteSpace(sessionId) ? "multiplayer-session" : sessionId);
+            player_data.FixData();
+            return player_data;
+        }
+
+        public static void EndTransientSession()
+        {
+            player_data = null;
+            file_loaded = "";
+            transient_session = false;
+        }
+
+        public static bool IsTransientSession()
+        {
+            return transient_session;
         }
 
         public static void Delete(string filename)

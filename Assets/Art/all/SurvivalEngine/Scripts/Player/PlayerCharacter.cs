@@ -85,6 +85,8 @@ namespace SurvivalEngine
 
         private Vector3 controls_move;
         private Vector3 controls_freelook;
+        private bool network_input_enabled = false;
+        private Vector3 network_move_input;
 
         private ActionSleep sleep_target = null;
         private Coroutine action_routine = null;
@@ -202,6 +204,13 @@ namespace SurvivalEngine
         {
             if (!IsControlsEnabled())
                 return;
+
+            if (network_input_enabled)
+            {
+                controls_move = Vector3.ClampMagnitude(network_move_input, 1f);
+                controls_freelook = Vector3.zero;
+                return;
+            }
 
             //Controls
             PlayerControls controls = PlayerControls.Get(player_id);
@@ -395,6 +404,9 @@ namespace SurvivalEngine
                 tfacing = new Vector3(move.x, 0f, move.z).normalized;
             }
 
+            if (network_input_enabled)
+                return tfacing;
+
             //Rotate character with right joystick when not in free rotate mode
             bool freerotate = TheCamera.Get().IsFreelook();
             if (!freerotate)
@@ -562,6 +574,12 @@ namespace SurvivalEngine
 
         public void MoveTo(Vector3 pos)
         {
+            Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.MoveTo);
+            command.Position = pos;
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(this, command))
+                return;
+
             auto_move = true;
             auto_move_pos = pos;
             auto_move_pos_next = pos;
@@ -625,6 +643,13 @@ namespace SurvivalEngine
 
         public void Interact(Selectable selectable, Vector3 pos)
         {
+            Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.Interact);
+            command.TargetUid = selectable != null ? selectable.GetUID() : "";
+            command.Position = pos;
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(this, command))
+                return;
+
             if (interact_type == PlayerInteractBehavior.MoveAndInteract)
                 InteractMove(selectable, pos);
             else if (interact_type == PlayerInteractBehavior.InteractOnly)
@@ -697,6 +722,12 @@ namespace SurvivalEngine
 
         public void Attack(Destructible target)
         {
+            Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.Attack);
+            command.TargetUid = target != null ? target.GetUID() : "";
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(this, command))
+                return;
+
             if (interact_type == PlayerInteractBehavior.MoveAndInteract)
                 AttackMove(target);
             else if (Combat.attack_type == PlayerAttackBehavior.AutoAttack)
@@ -754,6 +785,19 @@ namespace SurvivalEngine
             float range = Mathf.Max(Combat.GetAttackRange() + 2f, 5f);
             Destructible destruct = Destructible.GetNearestAutoAttack(this, GetInteractCenter(), range);
             Attack(destruct);
+        }
+
+        public void SetNetworkMoveInput(Vector3 movement)
+        {
+            network_input_enabled = true;
+            movement.y = 0f;
+            network_move_input = Vector3.ClampMagnitude(movement, 1f);
+        }
+
+        public void ClearNetworkMoveInput()
+        {
+            network_input_enabled = false;
+            network_move_input = Vector3.zero;
         }
 
         public void StopMove()
@@ -1205,11 +1249,17 @@ namespace SurvivalEngine
 
         public static PlayerCharacter GetFirst()
         {
+            PlayerCharacter local = Haven.Gameplay.SurvivalMultiplayerRuntime.GetLocalPlayer();
+            if (local != null)
+                return local;
             return player_first;
         }
 
         public static PlayerCharacter Get(int player_id=0)
         {
+            PlayerCharacter local = Haven.Gameplay.SurvivalMultiplayerRuntime.GetLocalPlayer();
+            if (local != null && (player_id == 0 || player_id == local.player_id))
+                return local;
             foreach (PlayerCharacter player in players_list)
             {
                 if (player.player_id == player_id)
