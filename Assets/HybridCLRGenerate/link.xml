@@ -48,6 +48,7 @@
   </assembly>
   <assembly fullname="UnityEngine.CoreModule">
     <type fullname="UnityEngine.Coroutine" preserve="all" />
+    <type fullname="UnityEngine.Object" preserve="all" />
     <type fullname="UnityEngine.Sprite" preserve="all" />
   </assembly>
   <assembly fullname="UnityEngine.JSONSerializeModule">
