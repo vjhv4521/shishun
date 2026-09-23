@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using FishNet.Component.Spawning;
 using FishNet.Component.Transforming;
@@ -18,34 +17,12 @@ namespace Haven.Framework.Editor
 {
     public static class HavenNetworkSetup
     {
-        private const string AutoRefreshSessionKey = "Haven.Network.SurvivalPrefabRefresh.v4";
         public const string ScenePath = "Assets/Scenes/FrameworkDemo.unity";
         public const string WorldScenePath = "Assets/Scenes/WorldGenMap.unity";
         public const string PlayerPrefabPath = "Assets/Prefabs/Network/HavenPlayer.prefab";
         public const string SurvivalPlayerPrefabPath = "Assets/Art/all/SurvivalEngine/Prefabs/PlayerCharacter.prefab";
         public const string NetworkSettingsPath = "Assets/Resources/HavenNetworkSettings.asset";
         private const string DefaultPrefabsPath = "Assets/DefaultPrefabObjects.asset";
-
-        [InitializeOnLoadMethod]
-        private static void RefreshStaleDemoAfterCompile()
-        {
-            if (SessionState.GetBool(AutoRefreshSessionKey, false))
-                return;
-            SessionState.SetBool(AutoRefreshSessionKey, true);
-            EditorApplication.delayCall += () =>
-            {
-                if (EditorApplication.isCompiling || EditorApplication.isPlayingOrWillChangePlaymode)
-                    return;
-                var simulationType = Type.GetType("Haven.Gameplay.NetworkSurvivalPlayerAdapter, Assembly-CSharp");
-                if (simulationType == null)
-                    return;
-                var player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
-                var stalePlayer = !player || player.GetComponent(simulationType) == null;
-                var staleScene = File.Exists(ScenePath) && File.ReadAllText(ScenePath).Contains("Server-authoritative Test Ground");
-                if (stalePlayer || staleScene)
-                    CreateOrRefreshDemo();
-            };
-        }
 
         [MenuItem("Haven/Network/1. Create or Refresh Demo")]
         public static void CreateOrRefreshDemo()
@@ -56,8 +33,7 @@ namespace Haven.Framework.Editor
             EnsureFolder("Assets/Resources");
 
             var settings = EnsureNetworkSettings();
-            EditorUtility.SetDirty(settings);
-            var player = EnsurePlayerPrefab();
+            var player = RequirePlayerPrefab();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             AddPlayerToDefaultPrefabs(player);
@@ -67,6 +43,18 @@ namespace Haven.Framework.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             Debug.Log($"[Haven] FishNet demo is ready: {ScenePath}");
+        }
+
+        // Explicit one-time conversion. Refreshing the lobby must never replace an artist-edited player prefab.
+        [MenuItem("Haven/Network/2. Rebuild Survival Player Prefab")]
+        public static void RebuildSurvivalPlayerPrefab()
+        {
+            var player = BuildSurvivalPlayerPrefab();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            AddPlayerToDefaultPrefabs(player);
+            AssetDatabase.SaveAssets();
+            ValidatePlayerPrefab(player);
         }
 
         [MenuItem("Haven/Network/Validate Demo")]
@@ -80,21 +68,8 @@ namespace Haven.Framework.Editor
 
             if (!settings || !player || !scene || !worldScene || !prefabs)
                 throw new InvalidOperationException("Haven network demo is incomplete. Run Haven/Network/1. Create or Refresh Demo.");
-            if (!player.TryGetComponent<NetworkObject>(out var networkObject) ||
-                !player.TryGetComponent<FishNetPlayerAvatar>(out _) ||
-                !player.TryGetComponent<NetworkTransform>(out _))
-                throw new InvalidOperationException("HavenPlayer prefab is missing required FishNet components.");
-            var simulationType = Type.GetType("Haven.Gameplay.NetworkSurvivalPlayerAdapter, Assembly-CSharp");
-            if (simulationType == null || player.GetComponent(simulationType) == null)
-                throw new InvalidOperationException("HavenPlayer prefab is missing the SurvivalEngine network adapter.");
-            foreach (var renderer in player.GetComponentsInChildren<Renderer>(true))
-            {
-                foreach (var material in renderer.sharedMaterials)
-                {
-                    if (!material || !material.shader || !material.shader.isSupported || material.shader.name == "Hidden/InternalErrorShader")
-                        throw new InvalidOperationException($"HavenPlayer renderer '{renderer.name}' has a missing or unsupported material shader.");
-                }
-            }
+            ValidatePlayerPrefab(player);
+            var networkObject = player.GetComponent<NetworkObject>();
             if (!prefabs.Prefabs.Contains(networkObject))
                 throw new InvalidOperationException("HavenPlayer is not registered in FishNet DefaultPrefabObjects.");
             if (!EditorBuildSettings.scenes.Any(item => item.enabled && item.path == ScenePath))
@@ -116,6 +91,13 @@ namespace Haven.Framework.Editor
             ValidateDemo();
         }
 
+        public static void RebuildSurvivalDemoBatch()
+        {
+            RebuildSurvivalPlayerPrefab();
+            CreateOrRefreshDemo();
+            ValidateDemo();
+        }
+
         private static HavenNetworkSettings EnsureNetworkSettings()
         {
             var settings = AssetDatabase.LoadAssetAtPath<HavenNetworkSettings>(NetworkSettingsPath);
@@ -126,7 +108,44 @@ namespace Haven.Framework.Editor
             return settings;
         }
 
-        private static GameObject EnsurePlayerPrefab()
+        private static GameObject RequirePlayerPrefab()
+        {
+            var player = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            if (!player)
+                throw new InvalidOperationException($"HavenPlayer is missing. Run Haven/Network/2. Rebuild Survival Player Prefab once: {PlayerPrefabPath}");
+            ValidatePlayerPrefab(player);
+            return player;
+        }
+
+        private static void ValidatePlayerPrefab(GameObject player)
+        {
+            if (!player.TryGetComponent<NetworkObject>(out _) ||
+                !player.TryGetComponent<FishNetPlayerAvatar>(out _) ||
+                !player.TryGetComponent<NetworkTransform>(out _))
+                throw new InvalidOperationException("HavenPlayer prefab is missing required FishNet components.");
+            var simulationType = Type.GetType("Haven.Gameplay.NetworkSurvivalPlayerAdapter, Assembly-CSharp");
+            if (simulationType == null || player.GetComponent(simulationType) == null)
+                throw new InvalidOperationException("HavenPlayer prefab is missing the SurvivalEngine network adapter.");
+            if (player.GetComponent<MeshRenderer>() || player.GetComponent<MeshFilter>())
+                throw new InvalidOperationException("HavenPlayer still contains the legacy capsule renderer.");
+            var renderers = player.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+                throw new InvalidOperationException("HavenPlayer has no character renderers.");
+            foreach (var renderer in renderers)
+            {
+                foreach (var material in renderer.sharedMaterials)
+                {
+                    if (!material || !material.shader || !material.shader.isSupported ||
+                        material.shader.name == "Hidden/InternalErrorShader" ||
+                        !material.shader.name.StartsWith("Universal Render Pipeline/", StringComparison.Ordinal))
+                        throw new InvalidOperationException($"HavenPlayer renderer '{renderer.name}' needs a supported URP material: " +
+                            $"{(material ? material.name : "<null>")} / {(material && material.shader ? material.shader.name : "<null>")} / " +
+                            $"{(material ? material.GetTag("RenderPipeline", false) : "<null>")} / {AssetDatabase.GetAssetPath(material)}");
+                }
+            }
+        }
+
+        private static GameObject BuildSurvivalPlayerPrefab()
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(SurvivalPlayerPrefabPath);
             if (!source)
@@ -168,7 +187,7 @@ namespace Haven.Framework.Editor
             var transformSettings = new SerializedObject(networkTransform);
             transformSettings.FindProperty("_clientAuthoritative").boolValue = false;
             transformSettings.FindProperty("_sendToOwner").boolValue = true;
-            transformSettings.FindProperty("_synchronizeRotation").boolValue = false;
+            transformSettings.FindProperty("_synchronizeRotation").boolValue = true;
             transformSettings.FindProperty("_synchronizeScale").boolValue = false;
             transformSettings.ApplyModifiedPropertiesWithoutUndo();
 

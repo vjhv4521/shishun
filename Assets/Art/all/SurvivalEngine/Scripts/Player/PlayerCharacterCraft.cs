@@ -53,10 +53,12 @@ namespace SurvivalEngine
              build_timer += Time.deltaTime;
              craft_timer += Time.deltaTime;
 
-            PlayerControls controls = PlayerControls.Get(character.player_id);
+            var networkPlayer = character.GetComponent<Haven.Gameplay.NetworkSurvivalPlayerAdapter>();
+            PlayerControls controls = networkPlayer && !networkPlayer.IsLocalOwner
+                ? null : PlayerControls.Get(networkPlayer ? 0 : character.player_id);
 
             //Cancel building
-            if (controls.IsPressUICancel() || controls.IsPressPause())
+            if (controls && (controls.IsPressUICancel() || controls.IsPressPause()))
                 CancelBuilding();
 
             //Cancel crafting
@@ -255,6 +257,14 @@ namespace SurvivalEngine
         {
             if (current_build_data != null && current_buildable != null && current_crafting == null)
             {
+                Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
+                    Haven.Framework.Services.SurvivalCommandType.Build);
+                command.DataId = current_build_data.id;
+                command.Position = pos;
+                command.Rotation = current_buildable.transform.rotation;
+                if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, command))
+                    return;
+
                 if (CanCraft(current_build_data, build_pay_slot, true))
                 {
 

@@ -53,7 +53,7 @@ Windows Dedicated Server 使用 `Haven/Build/Windows Dedicated Server` 单独构
 
 HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 Windows、Android、iOS 或 WebGL 后，必须针对新目标重新执行第 3 步；Framework 中可能影响 AOT 引用的代码变更后也应重新生成。
 
-远端默认目录规则为：`{host}/{platform}/{appVersion}`，项目中提交的默认值是 `http://127.0.0.1:5080/patches/PC/0.1.0`。Hosted 构建设置 `HAVEN_PATCH_BASE_URL=http://<SERVER_LAN_IP>:5080/patches`、`HAVEN_GAME_SERVER_HOST=<SERVER_LAN_IP>` 和显式内容版本；构建脚本只在本次构建中注入并于结束后恢复，避免提交局域网 IP。正式 LAN 发布使用 `scripts/build-lan-release.ps1`，并由 `docs/HOTUPDATE_LAN_ACCEPTANCE.md` 记录 V1/V2、故障重试和双机验收步骤。
+远端默认目录规则为：`{host}/{platform}/{appVersion}`，项目中提交的默认值是 `http://127.0.0.1:5080/patches/PC/0.3.0`。Hosted 构建设置 `HAVEN_PATCH_BASE_URL=http://<SERVER_LAN_IP>:5080/patches`、`HAVEN_GAME_SERVER_HOST=<SERVER_LAN_IP>` 和显式内容版本；构建脚本只在本次构建中注入并于结束后恢复，避免提交局域网 IP。正式 LAN 发布使用 `scripts/build-lan-release.ps1`，并由 `docs/HOTUPDATE_LAN_ACCEPTANCE.md` 记录 V1/V2、故障重试和双机验收步骤。
 
 ## 开发模式
 
@@ -68,7 +68,11 @@ HybridCLR 的 AOT 裁剪结果和补充元数据与构建目标绑定：切换 W
 
 独立入口 `Haven/Build/Windows Camp Quest Demo` 针对 Windows Player 执行 Generate All，制作随包内容并临时使用 Offline，结束后恢复原设置。它只更新 StreamingAssets，不再切换 Hosted 补丁服务器的远端版本指针。新增契约改变 AOT 边界，必须重新完整构建，不用于旧客户端原地升级。详细说明与验收状态见 `docs/CAMP_QUESTS.md`。
 
-0.2.0 合作玩法通过 `ICoopGameplayService` 暴露稳定契约，由 `FishNetGameplayService` 在服务器维护权威状态。客户端只提交采集、制作、建造、贡献、攻击和领奖意图；服务器用玩家网络对象位置校验距离，并独立结算私人背包、建筑、敌人生命与房间共享委托。每次有效变更向房内成员广播按接收者裁剪的完整快照；晚加入玩家会单独加载至 `WorldGenMap` 并收到当前世界。请求 ID 去重、操作冷却、资源耗尽/刷新、建筑地形和碰撞校验及奖励领取标记共同防止重复结算。游戏内右侧 WP4 面板可直接验收。详细步骤见 `doc/08_联机分工计划.md` 和 `doc/08_WP4_联机玩法同步说明.md`。
+0.3.0 的联机世界使用 `WorldGenMap` 的 SurvivalEngine 角色与场景对象。`FishNetPlayerAvatar` 只负责输入、命令与快照传输；默认程序集中的 `NetworkSurvivalPlayerAdapter` 和 `SurvivalWorldNetworkBridge` 连接原角色控制、背包及临时 `PlayerData`。`ISurvivalSessionService` 暴露本地快照，旧 `ICoopGameplayService` 是兼容外观，不再维护第二套 WP4 物资。网络协议为 4；与 0.2.0 客户端不兼容。联机房间不读写单机存档，房主退出即结束本局。
+
+`Haven/Network/1. Create or Refresh Demo` 仅校验并配置已制作的网络角色 Prefab；需要主动重新制作时才使用 `Haven/Network/2. Rebuild Survival Player Prefab`。不能把 `HavenPlayer.prefab` 恢复为胶囊。客户端仅将操作请求交给房主；私人背包只通过目标快照发给本人。当前同步仍以周期性完整快照为主，移动预测、双机长时间稳定性及 Windows 完整客户端发布需单独实机验收，不能仅凭 Editor 测试认定已完成。
+
+Windows 双进程基础冒烟可用同一份 Offline 构建：先用 `HavenClient.exe -batchmode -nographics -logFile <host.log> -haven-smoke-role=host` 启动房主，从日志中的 `HAVEN_SMOKE_ROOM=` 读取房间码；再用 `HavenClient.exe -batchmode -nographics -logFile <guest.log> -haven-smoke-role=guest -haven-smoke-room=<房间码>` 启动客机。两边须分别出现 `HAVEN_SMOKE_PASS`；此探针验证房间、双玩家快照、相机/AudioListener 数量，以及无效目标和重复请求被房主拒绝，不替代采集、制作、建造、战斗与委托的手动双机验收。
 
 1. 在 `Assets/Hotfix/Runtime/Modules` 新建 `HotfixModuleBase` 子类。
 2. 通过 `Context.Services` 注册接口，通过 `Context.Events` 发布领域事件。

@@ -86,6 +86,7 @@ namespace SurvivalEngine
         private Vector3 controls_move;
         private Vector3 controls_freelook;
         private bool network_input_enabled = false;
+        private bool network_local_input_only = false;
         private Vector3 network_move_input;
 
         private ActionSleep sleep_target = null;
@@ -101,6 +102,8 @@ namespace SurvivalEngine
 
         private static PlayerCharacter player_first = null;
         private static List<PlayerCharacter> players_list = new List<PlayerCharacter>();
+        private PlayerControlsMouse subscribed_mouse;
+        private TheGame subscribed_game;
 
         void Awake()
         {
@@ -126,18 +129,30 @@ namespace SurvivalEngine
 
         private void OnDestroy()
         {
+            if (subscribed_mouse != null)
+            {
+                subscribed_mouse.onClick -= OnClick;
+                subscribed_mouse.onRightClick -= OnRightClick;
+                subscribed_mouse.onHold -= OnMouseHold;
+                subscribed_mouse.onRelease -= OnMouseRelease;
+            }
+            if (subscribed_game != null)
+                subscribed_game.onPause -= OnPause;
             players_list.Remove(this);
+            if (player_first == this)
+                player_first = players_list.Count > 0 ? players_list[0] : null;
         }
 
         private void Start()
         {
-            PlayerControlsMouse mouse_controls = PlayerControlsMouse.Get();
-            mouse_controls.onClick += OnClick;
-            mouse_controls.onRightClick += OnRightClick;
-            mouse_controls.onHold += OnMouseHold;
-            mouse_controls.onRelease += OnMouseRelease;
+            subscribed_mouse = PlayerControlsMouse.Get();
+            subscribed_mouse.onClick += OnClick;
+            subscribed_mouse.onRightClick += OnRightClick;
+            subscribed_mouse.onHold += OnMouseHold;
+            subscribed_mouse.onRelease += OnMouseRelease;
 
-            TheGame.Get().onPause += OnPause;
+            subscribed_game = TheGame.Get();
+            subscribed_game.onPause += OnPause;
 
             if (player_id < 0)
                 Debug.LogError("Player ID should be 0 or more: -1 is reserved to indicate neutral (no player)");
@@ -163,7 +178,7 @@ namespace SurvivalEngine
 
         void FixedUpdate()
         {
-            if (TheGame.Get().IsPaused())
+            if (TheGame.Get().IsPaused() || network_local_input_only)
                 return;
 
             //Update the automove target position based on navmesh path, or moving target
@@ -202,9 +217,6 @@ namespace SurvivalEngine
 
         private void UpdateControls()
         {
-            if (!IsControlsEnabled())
-                return;
-
             if (network_input_enabled)
             {
                 controls_move = Vector3.ClampMagnitude(network_move_input, 1f);
@@ -212,11 +224,16 @@ namespace SurvivalEngine
                 return;
             }
 
+            if (!IsControlsEnabled())
+                return;
+
             //Controls
-            PlayerControls controls = PlayerControls.Get(player_id);
+            PlayerControls controls = PlayerControls.Get(network_local_input_only ? 0 : player_id);
+            if (controls == null)
+                return;
             PlayerControlsMouse mcontrols = PlayerControlsMouse.Get();
             JoystickMobile joystick = JoystickMobile.Get();
-            KeyControlsUI ui_controls = KeyControlsUI.Get(player_id);
+            KeyControlsUI ui_controls = KeyControlsUI.Get(network_local_input_only ? 0 : player_id);
 
             Vector2 cmove = controls.GetMove();
             Vector2 cfree = controls.GetFreelook();
@@ -363,7 +380,7 @@ namespace SurvivalEngine
             }
 
             //Keyboard/gamepad moving
-            if (!auto_move && IsControlsEnabled())
+            if (!auto_move && (IsControlsEnabled() || network_input_enabled))
             {
                 tmove = controls_move * GetMoveSpeed();
             }
@@ -643,6 +660,14 @@ namespace SurvivalEngine
 
         public void Interact(Selectable selectable, Vector3 pos)
         {
+            if (Haven.Gameplay.SurvivalMultiplayerRuntime.IsActive() && selectable &&
+                selectable.GetComponent<Haven.Camp.CampQuestSteward>() &&
+                Haven.Gameplay.SurvivalMultiplayerRuntime.GetLocalPlayer() == this)
+            {
+                if (selectable.IsInUseRange(this))
+                    UnityEngine.Object.FindAnyObjectByType<Haven.Camp.CampQuestPanel>()?.Open();
+                return;
+            }
             Haven.Framework.Services.SurvivalCommand command = Haven.Framework.Services.SurvivalCommand.Create(
                 Haven.Framework.Services.SurvivalCommandType.Interact);
             command.TargetUid = selectable != null ? selectable.GetUID() : "";
@@ -715,6 +740,12 @@ namespace SurvivalEngine
 
         public void AttackFront()
         {
+            var networkTarget = Destructible.GetNearestAutoAttack(this, GetInteractCenter(), Combat.GetAttackRange() + 2f);
+            Haven.Framework.Services.SurvivalCommand networkAttack = Haven.Framework.Services.SurvivalCommand.Create(
+                Haven.Framework.Services.SurvivalCommandType.Attack);
+            networkAttack.TargetUid = networkTarget ? networkTarget.GetUID() : string.Empty;
+            if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(this, networkAttack))
+                return;
             if(TheCamera.Get().IsFreelook())
                 FaceFront();
             Combat.Attack();
@@ -798,6 +829,13 @@ namespace SurvivalEngine
         {
             network_input_enabled = false;
             network_move_input = Vector3.zero;
+        }
+
+        public void SetNetworkLocalInputOnly(bool value)
+        {
+            network_local_input_only = value;
+            if (value && !rigid.isKinematic)
+                rigid.linearVelocity = Vector3.zero;
         }
 
         public void StopMove()

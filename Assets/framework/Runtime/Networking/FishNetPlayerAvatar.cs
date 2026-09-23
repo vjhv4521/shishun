@@ -7,8 +7,6 @@ using Haven.Framework.Bootstrap;
 using Haven.Framework.Core;
 using Haven.Framework.Services;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 
 namespace Haven.Networking
 {
@@ -26,14 +24,22 @@ namespace Haven.Networking
         private float _nextAiRequestAt;
         private float _nextSurvivalSnapshotAt;
         private float _nextPublicStateAt;
+        private float _nextSurvivalCommandAt;
+        private float _nextSnapshotRequestAt;
         private long _survivalRevision;
+        private long _lastReceivedSurvivalRevision;
         private bool _executingSurvivalCommand;
+        private bool _simulationRoleInitialized;
+        private bool _simulationServerRole;
+        private bool _simulationOwnerRole;
+        private int _simulationPlayerId = -1;
 
         internal event Action<SurvivalSnapshot> SurvivalSnapshotReceived;
         internal event Action<SurvivalCommandCompleted> SurvivalCommandResultReceived;
 
         public bool ShouldRouteCommands => !_executingSurvivalCommand && IsOwner && IsClientStarted &&
                                            _simulation != null && _simulation.IsReady;
+        public bool BlockLocalCommands => !_executingSurvivalCommand && IsOwner;
 
         public override void OnStartNetwork()
         {
@@ -47,6 +53,7 @@ namespace Haven.Networking
         public override void OnStartClient()
         {
             base.OnStartClient();
+            EnsureSimulation();
             if (!IsOwner)
                 return;
             if (TryGetNetworkService(out var service))
@@ -65,7 +72,9 @@ namespace Haven.Networking
         {
             _simulation?.ShutdownNetworkRole();
             _simulation = null;
+            _simulationRoleInitialized = false;
             _processedSurvivalRequests.Clear();
+            _lastReceivedSurvivalRevision = 0;
             base.OnStopNetwork();
         }
 
@@ -114,6 +123,7 @@ namespace Haven.Networking
 
         internal void ClearSurvivalClientState()
         {
+            _lastReceivedSurvivalRevision = 0;
             SurvivalSnapshotReceived?.Invoke(SurvivalSnapshot.Empty);
         }
 
@@ -154,15 +164,10 @@ namespace Haven.Networking
 
         private void SendLocalInput()
         {
-            var keyboard = Keyboard.current;
-            if (keyboard == null || Time.unscaledTime < _nextInputSendAt)
+            if (Time.unscaledTime < _nextInputSendAt)
                 return;
-
-            var input = new Vector2(
-                ReadAxis(keyboard.aKey, keyboard.dKey),
-                ReadAxis(keyboard.sKey, keyboard.wKey));
-            input = Vector2.ClampMagnitude(input, 1f);
-            var movement = CameraRelative(input);
+            var movement = _simulation != null && _simulation.IsReady
+                ? _simulation.CaptureWorldMovement() : Vector3.zero;
             if ((movement - _lastSentInput).sqrMagnitude > 0.0001f || movement.sqrMagnitude > 0f)
             {
                 ServerSetInput(movement, _settings.ProtocolVersion);
@@ -171,24 +176,12 @@ namespace Haven.Networking
             _nextInputSendAt = Time.unscaledTime + _settings.InputSendInterval;
         }
 
-        private Vector3 CameraRelative(Vector2 input)
-        {
-            var camera = Camera.main;
-            var forward = camera ? camera.transform.forward : Vector3.forward;
-            var right = camera ? camera.transform.right : Vector3.right;
-            forward.y = 0f;
-            right.y = 0f;
-            forward.Normalize();
-            right.Normalize();
-            return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
-        }
-
         [ServerRpc]
         private void ServerSetInput(Vector3 input, int protocolVersion)
         {
-            if (protocolVersion != _settings.ProtocolVersion)
+            if (protocolVersion != _settings.ProtocolVersion || !IsFinite(input))
             {
-                _serverInput = Vector2.zero;
+                _serverInput = Vector3.zero;
                 return;
             }
             input.y = 0f;
@@ -217,15 +210,37 @@ namespace Haven.Networking
                     "客户端与房主的玩法协议版本不一致。");
                 return;
             }
-            if (string.IsNullOrWhiteSpace(requestId) || _processedSurvivalRequests.ContainsKey(requestId))
+            if (string.IsNullOrWhiteSpace(requestId) || requestId.Length > 64 ||
+                _processedSurvivalRequests.ContainsKey(requestId))
             {
                 TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.DuplicateRequest,
                     "该操作已经处理，未重复结算。");
                 return;
             }
 
+            var maximumTargetLength = (SurvivalCommandType)commandType == SurvivalCommandType.QuestAction
+                ? 8192 : 128;
+            if (targetUid?.Length > maximumTargetLength || dataId?.Length > 128 || actionId?.Length > 32)
+            {
+                TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.InvalidRequest,
+                    "请求字段长度超过允许范围。");
+                return;
+            }
+            if (Time.unscaledTime < _nextSurvivalCommandAt)
+            {
+                TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.RateLimited,
+                    "操作过快，请稍后重试。");
+                return;
+            }
+            if (_processedSurvivalRequests.Count >= 65536)
+            {
+                TargetSurvivalCommandResult(Owner, requestId, false, GameplayErrorCodes.RateLimited,
+                    "本局操作记录已达到上限，请重新创建房间。");
+                return;
+            }
+            _nextSurvivalCommandAt = Time.unscaledTime + 0.05f;
+
             _processedSurvivalRequests[requestId] = Time.unscaledTime;
-            PruneProcessedRequests();
             EnsureSimulation();
             if (_simulation == null || !_simulation.IsReady)
             {
@@ -269,8 +284,11 @@ namespace Haven.Networking
         [ServerRpc]
         private void ServerRequestSurvivalSnapshot(int protocolVersion)
         {
-            if (protocolVersion == _settings.ProtocolVersion)
+            if (protocolVersion == _settings.ProtocolVersion && Time.unscaledTime >= _nextSnapshotRequestAt)
+            {
+                _nextSnapshotRequestAt = Time.unscaledTime + 0.25f;
                 SendSnapshotToOwner();
+            }
         }
 
         [TargetRpc]
@@ -288,8 +306,9 @@ namespace Haven.Networking
             if (string.IsNullOrWhiteSpace(json))
                 return;
             var snapshot = JsonUtility.FromJson<SurvivalSnapshot>(json);
-            if (!snapshot.HasState)
+            if (!snapshot.HasState || snapshot.Revision <= _lastReceivedSurvivalRevision)
                 return;
+            _lastReceivedSurvivalRevision = snapshot.Revision;
             _simulation?.ApplySnapshot(snapshot);
             SurvivalSnapshotReceived?.Invoke(snapshot);
             GameBootstrap.Instance?.Context?.Events.Publish(new SurvivalSnapshotChanged(snapshot));
@@ -297,7 +316,7 @@ namespace Haven.Networking
 
         [ObserversRpc(BufferLast = true)]
         private void ObserversApplyPublicState(int playerId, Vector3 position, Quaternion rotation,
-            bool isMoving, bool isBusy, bool isDead, string equippedItemId)
+            bool isMoving, bool isBusy, bool isDead, float health, string equippedItemId)
         {
             if (IsServerStarted)
                 return;
@@ -309,6 +328,7 @@ namespace Haven.Networking
                 IsMoving = isMoving,
                 IsBusy = isBusy,
                 IsDead = isDead,
+                Health = health,
                 EquippedItemId = equippedItemId
             });
         }
@@ -322,7 +342,7 @@ namespace Haven.Networking
                 _nextPublicStateAt = Time.unscaledTime + _settings.InputSendInterval;
                 var state = _simulation.CapturePublicState();
                 ObserversApplyPublicState(state.PlayerId, state.Position, state.Rotation, state.IsMoving,
-                    state.IsBusy, state.IsDead, state.EquippedItemId ?? string.Empty);
+                    state.IsBusy, state.IsDead, state.Health, state.EquippedItemId ?? string.Empty);
             }
             if (Time.unscaledTime >= _nextSurvivalSnapshotAt)
             {
@@ -341,33 +361,35 @@ namespace Haven.Networking
 
         private void EnsureSimulation()
         {
-            if (_simulation != null)
-                return;
-            foreach (var behaviour in GetComponents<MonoBehaviour>())
+            if (_simulation == null)
             {
-                if (behaviour is INetworkPlayerSimulation simulation)
+                foreach (var behaviour in GetComponents<MonoBehaviour>())
                 {
-                    _simulation = simulation;
-                    var playerId = Owner != null ? Owner.ClientId : -1;
-                    _simulation.InitializeNetworkRole(IsServerStarted, IsOwner, playerId, this);
-                    break;
+                    if (behaviour is INetworkPlayerSimulation simulation)
+                    {
+                        _simulation = simulation;
+                        break;
+                    }
                 }
             }
+            if (_simulation == null)
+                return;
+            var serverRole = IsServerStarted;
+            var ownerRole = IsOwner;
+            var playerId = Owner != null ? Owner.ClientId : -1;
+            if (_simulationRoleInitialized && serverRole == _simulationServerRole &&
+                ownerRole == _simulationOwnerRole && playerId == _simulationPlayerId)
+                return;
+            _simulationServerRole = serverRole;
+            _simulationOwnerRole = ownerRole;
+            _simulationPlayerId = playerId;
+            _simulationRoleInitialized = true;
+            _simulation.InitializeNetworkRole(serverRole, ownerRole, playerId, this);
         }
 
-        private void PruneProcessedRequests()
+        private static bool IsFinite(Vector3 value)
         {
-            if (_processedSurvivalRequests.Count < 256)
-                return;
-            var cutoff = Time.unscaledTime - 120f;
-            var stale = new List<string>();
-            foreach (var pair in _processedSurvivalRequests)
-            {
-                if (pair.Value < cutoff)
-                    stale.Add(pair.Key);
-            }
-            foreach (var requestId in stale)
-                _processedSurvivalRequests.Remove(requestId);
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         [ServerRpc]
@@ -477,11 +499,6 @@ namespace Haven.Networking
             foreach (var callback in _pending.Values)
                 callback(failure);
             _pending.Clear();
-        }
-
-        private static float ReadAxis(KeyControl negative, KeyControl positive)
-        {
-            return (positive.isPressed ? 1f : 0f) - (negative.isPressed ? 1f : 0f);
         }
 
         private static string Limit(string value, int maximumLength)

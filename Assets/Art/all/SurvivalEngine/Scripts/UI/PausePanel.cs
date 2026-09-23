@@ -45,6 +45,31 @@ namespace SurvivalEngine
 
         }
 
+        public override void Show(bool instant = false)
+        {
+            base.Show(instant);
+            SetSaveButtonsInteractable(!PlayerData.IsTransientSession());
+        }
+
+        private void SetSaveButtonsInteractable(bool interactable)
+        {
+            foreach (var button in GetComponentsInChildren<Button>(true))
+            {
+                var click = button.onClick;
+                for (var index = 0; index < click.GetPersistentEventCount(); index++)
+                {
+                    if (click.GetPersistentTarget(index) != this)
+                        continue;
+                    var method = click.GetPersistentMethodName(index);
+                    if (method != nameof(OnClickSave) && method != nameof(OnClickLoad) &&
+                        method != nameof(OnClickNew))
+                        continue;
+                    button.interactable = interactable;
+                    break;
+                }
+            }
+        }
+
         public void OnClickSave()
         {
             if (PlayerData.IsTransientSession())

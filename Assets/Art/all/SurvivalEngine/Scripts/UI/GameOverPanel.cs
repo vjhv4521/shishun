@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace SurvivalEngine
 {
@@ -27,8 +28,42 @@ namespace SurvivalEngine
 
         }
 
+        public override void Show(bool instant = false)
+        {
+            base.Show(instant);
+            if (!PlayerData.IsTransientSession())
+                return;
+
+            foreach (var button in GetComponentsInChildren<Button>(true))
+            {
+                var click = button.onClick;
+                for (var index = 0; index < click.GetPersistentEventCount(); index++)
+                {
+                    if (click.GetPersistentTarget(index) != this)
+                        continue;
+                    var method = click.GetPersistentMethodName(index);
+                    if (method == nameof(OnClickLoad))
+                    {
+                        var tmpLabel = button.GetComponentInChildren<TMP_Text>(true);
+                        if (tmpLabel)
+                            tmpLabel.text = "返回主菜单";
+                        var uguiLabel = button.GetComponentInChildren<Text>(true);
+                        if (uguiLabel)
+                            uguiLabel.text = "返回主菜单";
+                    }
+                    else if (method == nameof(OnClickNew))
+                        button.interactable = false;
+                }
+            }
+        }
+
         public void OnClickLoad()
         {
+            if (PlayerData.IsTransientSession())
+            {
+                PausePanel.Get()?.OnClickQuit();
+                return;
+            }
             if (PlayerData.HasLastSave())
                 StartCoroutine(LoadRoutine());
             else
@@ -37,6 +72,11 @@ namespace SurvivalEngine
 
         public void OnClickNew()
         {
+            if (PlayerData.IsTransientSession())
+            {
+                PausePanel.Get()?.OnClickQuit();
+                return;
+            }
             StartCoroutine(NewRoutine());
         }
 

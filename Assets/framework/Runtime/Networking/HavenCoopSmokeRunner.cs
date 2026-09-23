@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace Haven.Networking
 {
-    // Opt-in player-process probe. Example: -haven-smoke-role=host or
+    // Opt-in two-player process probe. Example: -haven-smoke-role=host or
     // -haven-smoke-role=guest -haven-smoke-room=ABC123.
     internal sealed class HavenCoopSmokeRunner : MonoBehaviour
     {
@@ -71,17 +71,21 @@ namespace Haven.Networking
             }
 
             if (!bootstrap.Context.Services.TryResolve<INetworkService>(out var network) ||
+                !bootstrap.Context.Services.TryResolve<INetworkHostService>(out var host) ||
                 !bootstrap.Context.Services.TryResolve<IRoomService>(out var rooms) ||
-                !bootstrap.Context.Services.TryResolve<ICoopGameplayService>(out var gameplay))
+                !bootstrap.Context.Services.TryResolve<ISurvivalSessionService>(out var survival))
             {
-                Fail("network, room, or gameplay service missing");
+                Fail("network, room, host, or survival session service missing");
                 yield break;
             }
 
             var settings = Resources.Load<HavenNetworkSettings>(HavenNetworkSettings.DefaultResourceName);
             var port = settings ? settings.Port : (ushort)7770;
             FrameworkResult connected = default;
-            yield return network.Connect(new NetworkEndpoint("127.0.0.1", port), result => connected = result);
+            if (_role == "host")
+                yield return host.StartHost(new NetworkEndpoint("127.0.0.1", port), result => connected = result);
+            else
+                yield return network.Connect(new NetworkEndpoint("127.0.0.1", port), result => connected = result);
             if (!connected.Succeeded)
             {
                 Fail($"connect: {connected.Error}");
@@ -134,45 +138,73 @@ namespace Haven.Networking
                 Fail($"game scene not ready: {rooms.Current.Phase}");
                 yield break;
             }
-            yield return WaitFor(() => gameplay.Current.HasState && gameplay.Current.Players.Length >= 2, 30f);
-            if (!gameplay.Current.HasState || gameplay.Current.Players.Length < 2)
+            yield return WaitFor(() => survival.Current.HasState &&
+                survival.Current.Players != null && survival.Current.Players.Length >= 2, 30f);
+            if (!survival.Current.HasState || survival.Current.Players == null ||
+                survival.Current.Players.Length < 2)
             {
-                Fail("two-player gameplay snapshot missing");
+                Fail("two-player survival snapshot missing");
                 yield break;
             }
-            Debug.Log($"HAVEN_SMOKE_INGAME role={_role} revision={gameplay.Current.Revision}");
-
-            if (_role == "host")
+            var hasLocalPlayer = false;
+            foreach (var player in survival.Current.Players)
             {
-                FrameworkResult<GameplaySnapshot> collected = default;
-                yield return gameplay.Collect("wood_01", result => collected = result);
-                if (!collected.Succeeded)
-                {
-                    Fail($"authoritative collect: {collected.Error}");
-                    yield break;
-                }
-                if (!collected.Value.TryGetLocalPlayer(out var player) || ItemCount(player.Inventory, GameplayItemIds.Wood) != 1)
-                {
-                    Fail("private inventory did not receive exactly one wood");
-                    yield break;
-                }
-                Debug.Log("HAVEN_SMOKE_COLLECTED role=host node=wood_01 wood=1");
+                if (player.PlayerId == survival.Current.LocalPlayerId)
+                    hasLocalPlayer = true;
             }
-            else
+            if (!hasLocalPlayer)
             {
-                yield return WaitFor(() => NodeRemaining(gameplay.Current, "wood_01") == 7, 30f);
-                if (NodeRemaining(gameplay.Current, "wood_01") != 7)
-                {
-                    Fail("guest did not receive the host's resource update");
-                    yield break;
-                }
-                if (!gameplay.Current.TryGetLocalPlayer(out var player) || ItemCount(player.Inventory, GameplayItemIds.Wood) != 0)
-                {
-                    Fail("host's private wood leaked into guest inventory");
-                    yield break;
-                }
-                Debug.Log("HAVEN_SMOKE_SYNCED role=guest node=wood_01 remaining=7 privateWood=0");
+                Fail("local player missing from survival snapshot");
+                yield break;
             }
+            var probe = SurvivalCommand.Create(SurvivalCommandType.Interact);
+            probe.TargetUid = "haven-smoke-missing-target";
+            var hasResult = false;
+            SurvivalCommandCompleted commandResult = default;
+            using (bootstrap.Context.Events.Subscribe<SurvivalCommandCompleted>(result =>
+                   {
+                       if (result.RequestId != probe.RequestId)
+                           return;
+                       commandResult = result;
+                       hasResult = true;
+                   }))
+            {
+                if (!survival.Submit(probe))
+                {
+                    Fail("could not submit authoritative command probe");
+                    yield break;
+                }
+                yield return WaitFor(() => hasResult, 10f);
+                if (!hasResult || commandResult.Succeeded || commandResult.ErrorCode != GameplayErrorCodes.NotFound)
+                {
+                    Fail("server did not reject the missing interaction target");
+                    yield break;
+                }
+                hasResult = false;
+                if (!survival.Submit(probe))
+                {
+                    Fail("could not resubmit duplicate command probe");
+                    yield break;
+                }
+                yield return WaitFor(() => hasResult, 10f);
+                if (!hasResult || commandResult.Succeeded || commandResult.ErrorCode != GameplayErrorCodes.DuplicateRequest)
+                {
+                    Fail("server did not reject the duplicate request ID");
+                    yield break;
+                }
+            }
+            var activeCameras = 0;
+            foreach (var camera in FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                if (camera.enabled) activeCameras++;
+            var activeListeners = 0;
+            foreach (var listener in FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+                if (listener.enabled) activeListeners++;
+            if (activeCameras != 1 || activeListeners != 1)
+            {
+                Fail($"expected one camera and listener, got {activeCameras} cameras and {activeListeners} listeners");
+                yield break;
+            }
+            Debug.Log($"HAVEN_SMOKE_INGAME role={_role} revision={survival.Current.Revision} players={survival.Current.Players.Length}");
 
             Debug.Log($"HAVEN_SMOKE_PASS role={_role}");
             yield return new WaitForSecondsRealtime(1f);
@@ -192,22 +224,6 @@ namespace Haven.Networking
                 if (!member.IsHost && member.IsReady)
                     return true;
             return false;
-        }
-
-        private static int ItemCount(GameplayInventoryItemSnapshot[] items, string itemId)
-        {
-            foreach (var item in items ?? Array.Empty<GameplayInventoryItemSnapshot>())
-                if (item.ItemId == itemId)
-                    return item.Quantity;
-            return 0;
-        }
-
-        private static int NodeRemaining(GameplaySnapshot snapshot, string nodeId)
-        {
-            foreach (var node in snapshot.ResourceNodes ?? Array.Empty<GameplayResourceNodeSnapshot>())
-                if (node.NodeId == nodeId)
-                    return node.Remaining;
-            return -1;
         }
 
         private void Fail(string reason)

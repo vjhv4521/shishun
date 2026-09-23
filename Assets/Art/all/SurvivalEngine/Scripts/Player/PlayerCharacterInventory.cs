@@ -40,7 +40,8 @@ namespace SurvivalEngine
             EquipData.size = 99; //Create the inventory, size doesnt matter for equip
 
             //If new game, add starting items
-            if (!has_inventory)
+            var networkAdapter = GetComponent<Haven.Gameplay.NetworkSurvivalPlayerAdapter>();
+            if (!has_inventory && (!networkAdapter || networkAdapter.IsServerAuthority))
             {
                 InventoryData invdata = InventoryData.Get(InventoryType.Inventory, character.player_id);
                 foreach (ItemData item in starting_items)
@@ -561,6 +562,20 @@ namespace SurvivalEngine
             InventoryItemData iitem2 = islot2.GetInventoryItem();
             ItemData item1 = islot1.GetItem();
             ItemData item2 = islot2.GetItem();
+
+            if (limit_one_item && iitem1 != null && iitem1.quantity > 1 && iitem2 == null &&
+                inventory2.type != InventoryType.Equipment)
+            {
+                Haven.Framework.Services.SurvivalCommand split = Haven.Framework.Services.SurvivalCommand.Create(
+                    Haven.Framework.Services.SurvivalCommandType.InventoryMove);
+                split.SourceInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory1);
+                split.TargetInventory = Haven.Gameplay.SurvivalCommandRouting.ToKind(this, inventory2);
+                split.SourceSlot = islot1.index;
+                split.TargetSlot = islot2.index;
+                split.Quantity = 1;
+                if (Haven.Gameplay.SurvivalCommandRouting.TrySubmit(character, split))
+                    return;
+            }
 
             if (inventory2.type == InventoryType.Equipment)
             {

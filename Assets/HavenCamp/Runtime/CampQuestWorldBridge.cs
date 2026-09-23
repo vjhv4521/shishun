@@ -17,6 +17,11 @@ namespace Haven.Camp
         private string _sessionId;
         private bool _disposed;
         private bool _committing;
+        private string _pendingSave;
+        private string _pendingRequestId;
+        private bool _pendingAccepted;
+        private IDisposable _commandSubscription;
+        private IDisposable _snapshotSubscription;
 
         public CampQuestWorldBridge(Transform steward) { _steward = steward; }
         public bool IsReady => !_disposed && _steward && TheGame.Get() && PlayerCharacter.GetFirst() &&
@@ -51,6 +56,8 @@ namespace Haven.Camp
 
         public string ReadSave()
         {
+            if (_pendingSave != null)
+                return _pendingSave;
             return PlayerData.Get().unique_strings.TryGetValue(SaveKey, out var json) ? json : null;
         }
 
@@ -64,6 +71,8 @@ namespace Haven.Camp
             var inventory = PlayerCharacter.GetFirst().Inventory;
             if (PlayerData.IsTransientSession())
             {
+                if (_pendingSave != null)
+                    return Failure("BUSY", "上一项营地委托操作仍在等待房主确认。");
                 var context = GameBootstrap.Instance?.Context;
                 if (context == null || !context.Services.TryResolve<ISurvivalSessionService>(out var session))
                     return Failure("NOT_READY", "联机生存会话尚未准备完成。");
@@ -77,9 +86,14 @@ namespace Haven.Camp
                     command.SourceSlot = exchange.rewardQuantity;
                     command.TargetSlot = exchange.rewardId == "bread" ? 1 : 0;
                 }
-                return session.Submit(command)
-                    ? FrameworkResult.Success()
-                    : Failure("NOT_READY", "房主未接受本次营地委托操作，请稍后重试。");
+                if (!session.Submit(command))
+                    return Failure("NOT_READY", "房主未接受本次营地委托操作，请稍后重试。");
+                _pendingSave = saveJson ?? string.Empty;
+                _pendingRequestId = command.RequestId;
+                _pendingAccepted = false;
+                _commandSubscription ??= context.Events.Subscribe<SurvivalCommandCompleted>(OnCommandCompleted);
+                _snapshotSubscription ??= context.Events.Subscribe<SurvivalSnapshotChanged>(OnSnapshotChanged);
+                return FrameworkResult.Success();
             }
             var main = inventory.InventoryData;
             var bag = inventory.BagData;
@@ -156,7 +170,38 @@ namespace Haven.Camp
             return copy;
         }
 
-        public void Dispose() { _disposed = true; }
+        public void Dispose()
+        {
+            _disposed = true;
+            _commandSubscription?.Dispose();
+            _snapshotSubscription?.Dispose();
+            _commandSubscription = null;
+            _snapshotSubscription = null;
+            _pendingSave = null;
+        }
+
+        private void OnCommandCompleted(SurvivalCommandCompleted result)
+        {
+            if (result.RequestId != _pendingRequestId)
+                return;
+            if (!result.Succeeded)
+                ClearPending();
+            else
+                _pendingAccepted = true;
+        }
+
+        private void OnSnapshotChanged(SurvivalSnapshotChanged changed)
+        {
+            if (_pendingAccepted && changed.Snapshot.HasState)
+                ClearPending();
+        }
+
+        private void ClearPending()
+        {
+            _pendingSave = null;
+            _pendingRequestId = null;
+            _pendingAccepted = false;
+        }
         private static int Count(PlayerCharacterInventory inventory, string item) =>
             inventory.InventoryData.CountItem(item) + (inventory.BagData?.CountItem(item) ?? 0);
         private static FrameworkResult Failure(string code, string message) => FrameworkResult.Failure(new FrameworkError("CAMP_" + code, message, "CampWorld", true));

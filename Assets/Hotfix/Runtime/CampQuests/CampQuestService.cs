@@ -15,6 +15,7 @@ namespace Haven.Hotfix.CampQuests
         private readonly IEventBus _events;
         private CampQuestSave _save = new CampQuestSave();
         private string _session;
+        private string _lastLoadedJson;
         private string _loadError;
         private bool _busy;
         private bool _disposed;
@@ -157,16 +158,17 @@ namespace Haven.Hotfix.CampQuests
         {
             if (_disposed || !_world.IsReady) return null;
             var state = _world.Capture();
-            if (_session != state.sessionId)
+            var json = _world.ReadSave();
+            if (_session != state.sessionId || !string.Equals(_lastLoadedJson, json, StringComparison.Ordinal))
             {
                 _generator.Cancel();
                 _generation++;
                 _busy = false;
                 _session = state.sessionId;
+                _lastLoadedJson = json;
                 _loadError = null;
                 try
                 {
-                    var json = _world.ReadSave();
                     _save = string.IsNullOrEmpty(json) ? new CampQuestSave() : ReadState(json);
                     if (_save == null || _save.version != 1 || _save.completedItems == null ||
                         _save.completedItems.Distinct().Count() != _save.completedItems.Length ||
@@ -206,6 +208,7 @@ namespace Haven.Hotfix.CampQuests
             if (result.Succeeded)
             {
                 _save = next;
+                _lastLoadedJson = WriteState(next);
                 _events.Publish(new CampQuestChanged(message));
             }
             return result;

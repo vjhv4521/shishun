@@ -6,6 +6,7 @@ using Haven.Framework.Bootstrap;
 using Haven.Framework.Services;
 using SurvivalEngine;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 namespace Haven.Gameplay
@@ -31,6 +32,7 @@ namespace Haven.Gameplay
 
         public bool IsReady => _initialized && _worldBridge && _character;
         public bool IsLocalOwner => _isOwner;
+        public bool IsServerAuthority => _isServer;
         public int PlayerId => _playerId;
 
         private void Awake()
@@ -53,13 +55,37 @@ namespace Haven.Gameplay
             _isOwner = isOwner;
             _playerId = playerId;
             _router = router;
+            if (_initialized)
+            {
+                EnableForRole();
+                if (_isOwner)
+                    BindLocalPresentation();
+                return;
+            }
             if (_initializeRoutine == null)
                 _initializeRoutine = StartCoroutine(InitializeWhenWorldReady());
         }
 
         public Vector3 CaptureWorldMovement()
         {
-            return Vector3.zero;
+            if (!IsReady || !_isOwner || !_character.IsControlsEnabled() ||
+                (TheGame.Get() && TheGame.Get().IsPaused()))
+                return Vector3.zero;
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return Vector3.zero;
+            var input = new Vector2(
+                (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f),
+                (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f));
+            var camera = Camera.main;
+            var forward = camera ? camera.transform.forward : Vector3.forward;
+            var right = camera ? camera.transform.right : Vector3.right;
+            forward.y = 0f;
+            right.y = 0f;
+            forward.Normalize();
+            right.Normalize();
+            return Vector3.ClampMagnitude(right * input.x + forward * input.y, 1f);
         }
 
         public void ApplyServerMovement(Vector3 movement)
@@ -82,6 +108,8 @@ namespace Haven.Gameplay
                 IsMoving = _character && _character.IsMoving(),
                 IsBusy = _character && _character.IsBusy(),
                 IsDead = _character && _character.IsDead(),
+                Health = _character && _character.Attributes
+                    ? _character.Attributes.GetAttributeValue(AttributeType.Health) : 0f,
                 EquippedItemId = equipped ?? string.Empty
             };
         }
@@ -90,13 +118,15 @@ namespace Haven.Gameplay
         {
             if (!_initialized || state.PlayerId != _playerId || _isServer)
                 return;
-            transform.SetPositionAndRotation(state.Position, state.Rotation);
+            // NetworkTransform owns position and rotation interpolation; the public state only drives visuals.
             if (_animator)
             {
                 _animator.enabled = true;
                 SetAnimatorBool("Move", state.IsMoving);
                 SetAnimatorBool("Death", state.IsDead);
             }
+            if (!_isOwner)
+                PlayerData.Get().GetPlayerCharacter(_playerId).attributes[AttributeType.Health] = state.Health;
             ApplyVisibleEquipment(state.EquippedItemId);
         }
 
@@ -131,6 +161,7 @@ namespace Haven.Gameplay
             if (_character)
             {
                 _character.ClearNetworkMoveInput();
+                _character.SetNetworkLocalInputOnly(false);
                 _character.DisableControls();
                 _character.DisableMovement();
             }
@@ -141,7 +172,11 @@ namespace Haven.Gameplay
 
         private IEnumerator InitializeWhenWorldReady()
         {
-            var deadline = Time.realtimeSinceStartup + 30f;
+            // A network avatar is spawned in the lobby. Waiting for a guest must not consume
+            // the world-initialization timeout before the host starts the game.
+            while (!SurvivalMultiplayerRuntime.IsActive())
+                yield return null;
+            var deadline = Time.realtimeSinceStartup + 60f;
             Scene world = default;
             while (Time.realtimeSinceStartup < deadline)
             {
@@ -161,6 +196,15 @@ namespace Haven.Gameplay
             _character.player_id = Mathf.Max(0, _playerId);
             MoveToWorldSpawn(world);
             _worldBridge = SurvivalWorldNetworkBridge.GetOrCreate(world, _isServer);
+            if (!_worldBridge)
+            {
+                Debug.LogError("[Haven] Multiplayer world has invalid interaction IDs; refusing to start the session.");
+                var context = GameBootstrap.Instance?.Context;
+                if (context != null && context.Services.TryResolve<INetworkService>(out var network))
+                    network.Disconnect();
+                _initializeRoutine = null;
+                yield break;
+            }
             EnableForRole();
             if (_isOwner)
                 BindLocalPresentation();
@@ -177,7 +221,8 @@ namespace Haven.Gameplay
             var spawn = Vector3.zero;
             foreach (var candidate in FindObjectsByType<PlayerCharacter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (candidate == _character || candidate.gameObject.scene != world)
+                if (candidate == _character || candidate.gameObject.scene != world ||
+                    candidate.GetComponent<NetworkSurvivalPlayerAdapter>())
                     continue;
                 spawn = candidate.transform.position;
                 candidate.gameObject.SetActive(false);
@@ -204,8 +249,12 @@ namespace Haven.Gameplay
                 }
                 SetColliders(true);
                 _character.move_enabled = true;
+                _character.SetNetworkLocalInputOnly(false);
                 _character.EnableMovement();
-                _character.EnableControls();
+                if (_isOwner)
+                    _character.EnableControls();
+                else
+                    _character.DisableControls();
                 _character.SetNetworkMoveInput(Vector3.zero);
             }
             else
@@ -214,8 +263,8 @@ namespace Haven.Gameplay
                 if (_isOwner)
                 {
                     EnableBehaviour<PlayerCharacter>();
-                    EnableBehaviour<PlayerCharacterAttribute>();
-                    _character.move_enabled = false;
+                    _character.move_enabled = true;
+                    _character.SetNetworkLocalInputOnly(true);
                     _character.DisableMovement();
                     _character.EnableControls();
                 }
@@ -332,7 +381,7 @@ namespace Haven.Gameplay
                 return null;
             foreach (var behaviour in source.GetComponents<MonoBehaviour>())
             {
-                if (behaviour is ISurvivalCommandRouter router && router.ShouldRouteCommands)
+                if (behaviour is ISurvivalCommandRouter router)
                     return router;
             }
             return null;
@@ -357,7 +406,11 @@ namespace Haven.Gameplay
         public static bool TrySubmit(PlayerCharacter character, SurvivalCommand command)
         {
             var router = character ? SurvivalMultiplayerRuntime.GetRouter(character.gameObject) : null;
-            return router != null && router.Submit(command);
+            if (router == null)
+                return false;
+            if (router.ShouldRouteCommands)
+                router.Submit(command);
+            return router.BlockLocalCommands;
         }
 
         public static bool Execute(PlayerCharacter character, SurvivalCommand command,
@@ -367,30 +420,39 @@ namespace Haven.Gameplay
             message = "无法执行该操作。";
             if (!character || command.Type == SurvivalCommandType.None)
                 return false;
+            if (character.IsDead())
+                return Failure(GameplayErrorCodes.InvalidRequest, "角色已死亡，不能执行该操作。", out errorCode, out message);
 
             switch (command.Type)
             {
                 case SurvivalCommandType.MoveTo:
-                    if (!IsFinite(command.Position))
-                        return false;
+                    if (!IsFinite(command.Position) ||
+                        Vector3.Distance(character.transform.position, command.Position) > 50f)
+                        return Failure(GameplayErrorCodes.OutOfRange, "移动目标无效或距离过远。", out errorCode, out message);
                     character.MoveTo(command.Position);
                     return Success(out errorCode, out message);
 
                 case SurvivalCommandType.Interact:
                 {
                     var selectable = Selectable.GetByUID(command.TargetUid);
-                    if (!selectable || !selectable.CanBeInteracted())
+                    if (!selectable || selectable.gameObject.scene != character.gameObject.scene ||
+                        !selectable.CanBeInteracted())
                         return Failure(GameplayErrorCodes.NotFound, "目标已经不存在或无法交互。", out errorCode, out message);
-                    character.Interact(selectable, command.Position);
+                    if (!selectable.IsInUseRange(character))
+                        return Failure(GameplayErrorCodes.OutOfRange, "请走近目标再交互。", out errorCode, out message);
+                    character.InteractDirect(selectable, selectable.GetClosestInteractPoint(character.GetInteractCenter()));
                     return Success(out errorCode, out message);
                 }
 
                 case SurvivalCommandType.Attack:
                 {
                     var target = Selectable.GetByUID(command.TargetUid)?.Destructible;
-                    if (!target || !character.Combat.CanAttack(target))
+                    if (!target || target.gameObject.scene != character.gameObject.scene ||
+                        !character.Combat.CanAttack(target))
                         return Failure(GameplayErrorCodes.NotFound, "目标已经无法攻击。", out errorCode, out message);
-                    character.Attack(target);
+                    if (!character.Combat.IsAttackTargetInRange(target))
+                        return Failure(GameplayErrorCodes.OutOfRange, "目标超出近战范围。", out errorCode, out message);
+                    character.AttackDirect(target);
                     return Success(out errorCode, out message);
                 }
 
@@ -398,18 +460,41 @@ namespace Haven.Gameplay
                 {
                     var source = ResolveInventory(character, command.SourceInventory);
                     var target = ResolveInventory(character, command.TargetInventory);
-                    if (source == null || target == null || command.SourceSlot < 0 || command.TargetSlot < 0)
-                        return false;
+                    if (source == null || target == null || command.SourceSlot < 0 || command.TargetSlot < 0 ||
+                        command.SourceSlot >= source.size || command.TargetSlot >= target.size ||
+                        (ReferenceEquals(source, target) && command.SourceSlot == command.TargetSlot))
+                        return Failure(GameplayErrorCodes.InvalidRequest, "背包格位置无效。", out errorCode, out message);
                     var sourceItem = source.GetInventoryItem(command.SourceSlot);
                     var targetItem = target.GetInventoryItem(command.TargetSlot);
                     if (sourceItem == null)
                         return Failure(GameplayErrorCodes.NotFound, "源背包格已经为空。", out errorCode, out message);
+                    var sourceData = ItemData.Get(sourceItem.item_id);
+                    if (!sourceData || (target.type == InventoryType.Bag && sourceData.IsBag()))
+                        return Failure(GameplayErrorCodes.InvalidRequest, "物品不能放进目标背包。", out errorCode, out message);
+                    if (command.Quantity == 1 && sourceItem.quantity > 1 && targetItem == null &&
+                        source.type != InventoryType.Equipment && target.type != InventoryType.Equipment)
+                    {
+                        source.RemoveItemAt(command.SourceSlot, 1);
+                        target.AddItemAt(sourceItem.item_id, command.TargetSlot, 1, sourceItem.durability,
+                            UniqueID.GenerateUniqueID());
+                        return Success(out errorCode, out message);
+                    }
+                    if (command.Quantity != 0)
+                        return Failure(GameplayErrorCodes.InvalidQuantity, "拆分数量无效。", out errorCode, out message);
                     if (target.type == InventoryType.Equipment)
+                    {
+                        if (sourceData.type != ItemType.Equipment || sourceData.equip_slot != (EquipSlot)command.TargetSlot)
+                            return Failure(GameplayErrorCodes.InvalidRequest, "物品不能装备在该位置。", out errorCode, out message);
                         character.Inventory.EquipItem(source, command.SourceSlot);
+                    }
                     else if (source.type == InventoryType.Equipment)
                         character.Inventory.UnequipItemTo(target, (EquipSlot)command.SourceSlot, command.TargetSlot);
                     else if (targetItem != null && sourceItem.item_id == targetItem.item_id)
+                    {
+                        if (sourceItem.quantity + targetItem.quantity > sourceData.inventory_max)
+                            return Failure(GameplayErrorCodes.InvalidQuantity, "目标堆叠已满。", out errorCode, out message);
                         character.Inventory.CombineItems(source, command.SourceSlot, target, command.TargetSlot);
+                    }
                     else
                         character.Inventory.SwapItems(source, command.SourceSlot, target, command.TargetSlot);
                     return Success(out errorCode, out message);
@@ -421,7 +506,7 @@ namespace Haven.Gameplay
                 case SurvivalCommandType.Craft:
                 {
                     var craft = CraftData.Get(command.DataId);
-                    if (!craft || !character.Crafting.CanCraft(craft))
+                    if (!craft || craft.GetItem() == null || !character.Crafting.CanCraft(craft))
                         return Failure(GameplayErrorCodes.InsufficientItems, "配方或材料条件不满足。", out errorCode, out message);
                     character.Crafting.StartCraftingOrBuilding(craft);
                     return Success(out errorCode, out message);
@@ -430,12 +515,30 @@ namespace Haven.Gameplay
                 case SurvivalCommandType.Build:
                 {
                     var craft = CraftData.Get(command.DataId);
-                    if (!craft || !character.Crafting.CanCraft(craft))
+                    if (!craft || craft.GetConstruction() == null || !character.Crafting.CanCraft(craft))
                         return Failure(GameplayErrorCodes.InsufficientItems, "建筑配方或材料条件不满足。", out errorCode, out message);
-                    if ((command.Position - character.transform.position).sqrMagnitude > 100f)
+                    if (!IsFinite(command.Position) || !IsFinite(command.Rotation) ||
+                        (command.Position - character.transform.position).sqrMagnitude > 100f)
                         return Failure(GameplayErrorCodes.OutOfRange, "建造位置距离角色过远。", out errorCode, out message);
                     character.Crafting.CraftBuildMode(craft);
+                    var preview = character.Crafting.GetCurrentBuildable();
+                    if (!preview)
+                        return Failure(GameplayErrorCodes.InvalidPlacement, "建筑预览创建失败。", out errorCode, out message);
+                    preview.transform.rotation = command.Rotation;
+                    preview.SetBuildPositionTemporary(command.Position);
+                    if (!preview.CheckIfCanBuild())
+                    {
+                        character.Crafting.CancelCrafting();
+                        return Failure(GameplayErrorCodes.InvalidPlacement, "建筑位置有碰撞或地形不合适。", out errorCode, out message);
+                    }
+                    var constructionCount = PlayerData.Get().built_constructions.Count;
                     character.Crafting.StartCraftBuilding(command.Position);
+                    if (!character.Crafting.IsCrafting() &&
+                        PlayerData.Get().built_constructions.Count == constructionCount)
+                    {
+                        character.Crafting.CancelCrafting();
+                        return Failure(GameplayErrorCodes.InvalidPlacement, "建造未能开始。", out errorCode, out message);
+                    }
                     return Success(out errorCode, out message);
                 }
 
@@ -449,41 +552,7 @@ namespace Haven.Gameplay
         private static bool ExecuteQuestAction(PlayerCharacter character, SurvivalCommand command,
             out string errorCode, out string message)
         {
-            if (command.ActionId == "deliver")
-            {
-                if ((command.DataId != "wood" && command.DataId != "rock") || command.Quantity <= 0 ||
-                    command.SourceSlot <= 0 || command.SourceSlot > 2 || command.TargetSlot != 1)
-                    return Failure(GameplayErrorCodes.InvalidRequest, "营地委托物品配置无效。", out errorCode, out message);
-                var main = character.InventoryData;
-                var bag = character.Inventory.BagData;
-                var available = main.CountItem(command.DataId) + (bag?.CountItem(command.DataId) ?? 0);
-                var reward = ItemData.Get("bread");
-                if (available < command.Quantity || !reward)
-                    return Failure(GameplayErrorCodes.InsufficientItems, "营地委托所需物资不足。", out errorCode, out message);
-
-                var mainCopy = Haven.Camp.CampQuestWorldBridge.Copy(main);
-                var bagCopy = bag != null ? Haven.Camp.CampQuestWorldBridge.Copy(bag) : null;
-                var definition = new Haven.Framework.CampQuests.CampQuestDefinition
-                {
-                    itemId = command.DataId,
-                    quantity = command.Quantity,
-                    rewardId = "bread",
-                    rewardQuantity = command.SourceSlot
-                };
-                var planned = Haven.Camp.CampQuestWorldBridge.PlanExchange(mainCopy, bagCopy, definition);
-                if (!planned.Succeeded)
-                    return Failure(GameplayErrorCodes.InsufficientItems, planned.Error.Message, out errorCode, out message);
-                main.items = mainCopy.items;
-                if (bag != null)
-                    bag.items = bagCopy.items;
-            }
-            else if (command.ActionId != "save")
-            {
-                return Failure(GameplayErrorCodes.InvalidRequest, "未知的营地委托操作。", out errorCode, out message);
-            }
-
-            PlayerData.Get().unique_strings[Haven.Camp.CampQuestWorldBridge.SaveKey] = command.TargetUid ?? string.Empty;
-            return Success(out errorCode, out message);
+            return SurvivalCampQuestAuthority.Execute(character, command, out errorCode, out message);
         }
 
         private static bool ExecuteInventoryAction(PlayerCharacter character, SurvivalCommand command,
@@ -537,6 +606,13 @@ namespace Haven.Gameplay
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
+        private static bool IsFinite(Quaternion value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) && float.IsFinite(value.w) &&
+                   value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w > 0.5f;
+        }
+
         private static bool Success(out string errorCode, out string message)
         {
             errorCode = string.Empty;
@@ -558,6 +634,8 @@ namespace Haven.Gameplay
         private readonly HashSet<NetworkSurvivalPlayerAdapter> _players = new HashSet<NetworkSurvivalPlayerAdapter>();
         private readonly HashSet<string> _appliedRemoved = new HashSet<string>(StringComparer.Ordinal);
         private bool _isServer;
+        private bool _validated;
+        private bool _validIds;
 
         public static SurvivalWorldNetworkBridge GetOrCreate(Scene world, bool isServer)
         {
@@ -569,7 +647,13 @@ namespace Haven.Gameplay
                 bridge = root.AddComponent<SurvivalWorldNetworkBridge>();
             }
             bridge._isServer |= isServer;
-            bridge.ValidateUniqueIds(world);
+            if (!bridge._validated)
+            {
+                bridge._validIds = bridge.ValidateUniqueIds(world);
+                bridge._validated = true;
+            }
+            if (!bridge._validIds)
+                return null;
             if (!bridge._isServer)
                 DisableClientWorldAuthority(world);
             return bridge;
@@ -667,6 +751,9 @@ namespace Haven.Gameplay
             var result = new List<SurvivalInventorySlotSnapshot>();
             AddInventory(result, InventoryData.Get(InventoryType.Inventory, playerId), SurvivalInventoryKind.Inventory);
             AddInventory(result, InventoryData.GetEquip(InventoryType.Equipment, playerId), SurvivalInventoryKind.Equipment);
+            var character = PlayerCharacter.Get(playerId);
+            if (character && character.Inventory)
+                AddInventory(result, character.Inventory.BagData, SurvivalInventoryKind.Bag);
             return result.ToArray();
         }
 
@@ -698,10 +785,24 @@ namespace Haven.Gameplay
             var equipment = InventoryData.GetEquip(InventoryType.Equipment, playerId);
             inventory.RemoveAll();
             equipment.RemoveAll();
-            foreach (var slot in slots ?? Array.Empty<SurvivalInventorySlotSnapshot>())
+            var incoming = slots ?? Array.Empty<SurvivalInventorySlotSnapshot>();
+            foreach (var slot in incoming)
             {
+                if (slot.Inventory == SurvivalInventoryKind.Bag)
+                    continue;
                 var target = slot.Inventory == SurvivalInventoryKind.Equipment ? equipment : inventory;
                 target.AddItemAt(slot.ItemId, slot.Slot, slot.Quantity, slot.Durability, slot.ItemUid);
+            }
+            // The equipped bag determines its own inventory UID. Restore equipment before resolving it.
+            var character = PlayerCharacter.Get(playerId);
+            var bag = character && character.Inventory ? character.Inventory.BagData : null;
+            if (bag == null)
+                return;
+            bag.RemoveAll();
+            foreach (var slot in incoming)
+            {
+                if (slot.Inventory == SurvivalInventoryKind.Bag)
+                    bag.AddItemAt(slot.ItemId, slot.Slot, slot.Quantity, slot.Durability, slot.ItemUid);
             }
         }
 
@@ -758,7 +859,11 @@ namespace Haven.Gameplay
             {
                 data.AddDroppedItem(item.ItemId, item.Scene, item.Position, item.Quantity, item.Durability, item.Uid);
                 if (!Item.GetByUID(item.Uid))
-                    Item.Spawn(item.Uid);
+                {
+                    var spawned = Item.Spawn(item.Uid);
+                    if (spawned)
+                        DisableObjectAuthority(spawned.gameObject);
+                }
             }
         }
 
@@ -785,25 +890,35 @@ namespace Haven.Gameplay
                     durability = item.Durability
                 };
                 if (!Construction.GetByUID(item.Uid))
-                    Construction.Spawn(item.Uid);
+                {
+                    var spawned = Construction.Spawn(item.Uid);
+                    if (spawned)
+                        DisableObjectAuthority(spawned.gameObject);
+                }
             }
         }
 
-        private void ValidateUniqueIds(Scene world)
+        private bool ValidateUniqueIds(Scene world)
         {
             var seen = new HashSet<string>(StringComparer.Ordinal);
+            var valid = true;
             foreach (var uid in FindObjectsByType<UniqueID>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                if (uid.gameObject.scene != world)
+                if (uid.gameObject.scene != world || uid.GetComponentInParent<NetworkSurvivalPlayerAdapter>())
                     continue;
                 if (string.IsNullOrWhiteSpace(uid.unique_id))
                 {
                     Debug.LogError($"[Haven] Multiplayer world object has an empty UniqueID: {uid.name}", uid);
+                    valid = false;
                     continue;
                 }
                 if (!seen.Add(uid.unique_id))
+                {
                     Debug.LogError($"[Haven] Multiplayer world has duplicate UniqueID '{uid.unique_id}'.", uid);
+                    valid = false;
+                }
             }
+            return valid;
         }
 
         private static void DisableClientWorldAuthority(Scene world)
@@ -812,10 +927,25 @@ namespace Haven.Gameplay
             {
                 if (behaviour.gameObject.scene != world || behaviour.GetComponent<NetworkSurvivalPlayerAdapter>())
                     continue;
-                if (behaviour is AnimalWild || behaviour is Character || behaviour is Destructible ||
-                    behaviour is Item || behaviour is Plant || behaviour is Regrowth)
+                if (IsWorldAuthorityBehaviour(behaviour))
                     behaviour.enabled = false;
             }
+        }
+
+        private static void DisableObjectAuthority(GameObject root)
+        {
+            foreach (var behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (IsWorldAuthorityBehaviour(behaviour))
+                    behaviour.enabled = false;
+            }
+        }
+
+        private static bool IsWorldAuthorityBehaviour(MonoBehaviour behaviour)
+        {
+            return behaviour is AnimalWild || behaviour is Character || behaviour is Destructible ||
+                   behaviour is Item || behaviour is Construction || behaviour is Buildable ||
+                   behaviour is Plant || behaviour is Regrowth;
         }
     }
 }

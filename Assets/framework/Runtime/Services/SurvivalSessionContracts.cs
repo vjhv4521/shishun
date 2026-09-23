@@ -82,6 +82,7 @@ namespace Haven.Framework.Services
         public bool IsMoving;
         public bool IsBusy;
         public bool IsDead;
+        public float Health;
         public string EquippedItemId;
     }
 
@@ -207,6 +208,7 @@ namespace Haven.Framework.Services
     public interface ISurvivalCommandRouter
     {
         bool ShouldRouteCommands { get; }
+        bool BlockLocalCommands { get; }
         bool Submit(SurvivalCommand command);
     }
 

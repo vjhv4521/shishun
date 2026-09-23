@@ -127,6 +127,15 @@ namespace Haven.Framework.Tests
         }
 
         [Test]
+        public void SharedRoomSaveChangeIsReloadedWithoutChangingScene()
+        {
+            Propose();
+            Assert.That(_service.GetView().Offer, Is.Not.Null);
+            _world.Json = JsonUtility.ToJson(new CampQuestSave { completionDay = _world.State.day });
+            Assert.That(_service.GetView().Offer, Is.Null);
+        }
+
+        [Test]
         public void ActiveQuestSurvivesMidnightButUnacceptedOfferExpires()
         {
             Propose(); _world.State.day++;

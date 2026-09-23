@@ -15,6 +15,9 @@ namespace Haven.Camp
 
         private void Interact(PlayerCharacter player)
         {
+            if (Haven.Gameplay.SurvivalMultiplayerRuntime.IsActive() &&
+                player != Haven.Gameplay.SurvivalMultiplayerRuntime.GetLocalPlayer())
+                return;
             if (player && !player.IsDead() && Vector3.Distance(player.transform.position, transform.position) <= 3f)
                 FindAnyObjectByType<CampQuestPanel>()?.Open();
         }
